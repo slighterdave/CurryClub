@@ -17,7 +17,7 @@ ssh -i /path/to/your-key.pem ubuntu@your-ec2-public-ip
 
 ## Step 2: Install Node.js and npm
 
-The application requires Node.js 18 or newer.
+The application requires Node.js 18 or newer. This guide uses Node.js 20.x LTS, which is recommended for production.
 
 ```bash
 # Update package list
@@ -388,9 +388,14 @@ To automate backups with a cron job:
 # Edit crontab
 crontab -e
 
-# Add this line to backup daily at 2 AM
+# Add this line to backup daily at 2 AM (keeps one backup per day)
 0 2 * * * cp /home/ubuntu/CurryClub/ratings.db /home/ubuntu/CurryClub/ratings.db.$(date +\%Y\%m\%d)
+
+# Or to keep backups with full timestamp (allows multiple backups per day)
+0 2 * * * cp /home/ubuntu/CurryClub/ratings.db /home/ubuntu/CurryClub/ratings.db.$(date +\%Y\%m\%d_\%H\%M\%S)
 ```
+
+**Note:** The first cron example creates one backup per day (overwrites if run multiple times). The second keeps all backups with unique timestamps.
 
 ## Quick Reference Commands
 

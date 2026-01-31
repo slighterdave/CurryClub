@@ -36,7 +36,12 @@ echo ""
 # Check if PM2 is installed
 if command -v pm2 &> /dev/null; then
     echo "🔄 Restarting application with PM2..."
-    pm2 restart curryclub || pm2 start server.js --name curryclub
+    # Check if curryclub process exists in PM2
+    if pm2 describe curryclub > /dev/null 2>&1; then
+        pm2 restart curryclub
+    else
+        pm2 start server.js --name curryclub
+    fi
     echo ""
     echo "✅ Deployment complete! Application restarted."
     echo ""
