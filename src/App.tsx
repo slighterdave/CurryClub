@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { RatingForm } from './components/RatingForm';
+import { Ratings } from './components/Ratings';
 
 // Simple icons as SVG components
 const MenuIcon = () => (
@@ -50,7 +52,16 @@ const InfoIcon = () => (
 );
 
 function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
+  );
+}
+
+function AppContent() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const location = useLocation();
 
   return (
     <div className="min-h-screen bg-white">
@@ -77,21 +88,33 @@ function App() {
         <nav className="p-6">
           <ul className="space-y-4">
             <li>
-              <a href="#" className="flex items-center gap-3 text-gray-700 hover:text-orange-600 transition-colors py-2">
+              <Link 
+                to="/" 
+                onClick={() => setMenuOpen(false)}
+                className={`flex items-center gap-3 transition-colors py-2 ${
+                  location.pathname === '/' ? 'text-orange-600' : 'text-gray-700 hover:text-orange-600'
+                }`}
+              >
                 <HomeIcon />
                 <span>Home</span>
-              </a>
+              </Link>
+            </li>
+            <li>
+              <Link 
+                to="/ratings" 
+                onClick={() => setMenuOpen(false)}
+                className={`flex items-center gap-3 transition-colors py-2 ${
+                  location.pathname === '/ratings' ? 'text-orange-600' : 'text-gray-700 hover:text-orange-600'
+                }`}
+              >
+                <TrophyIcon />
+                <span>Ratings</span>
+              </Link>
             </li>
             <li>
               <a href="#" className="flex items-center gap-3 text-gray-700 hover:text-orange-600 transition-colors py-2">
                 <StarIcon />
                 <span>My Ratings</span>
-              </a>
-            </li>
-            <li>
-              <a href="#" className="flex items-center gap-3 text-gray-700 hover:text-orange-600 transition-colors py-2">
-                <TrophyIcon />
-                <span>Top Rated</span>
               </a>
             </li>
             <li>
@@ -115,11 +138,18 @@ function App() {
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8 flex items-center justify-center min-h-[calc(100vh-80px)]">
         <div className="bg-white rounded-2xl shadow-lg p-8 max-w-2xl w-full border border-gray-200">
-          <div className="text-center mb-8">
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">Rate a Curry House</h2>
-            <p className="text-gray-600">currys with the lads</p>
-          </div>
-          <RatingForm />
+          <Routes>
+            <Route path="/" element={
+              <>
+                <div className="text-center mb-8">
+                  <h2 className="text-3xl font-bold text-gray-800 mb-2">Rate a Curry House</h2>
+                  <p className="text-gray-600">currys with the lads</p>
+                </div>
+                <RatingForm />
+              </>
+            } />
+            <Route path="/ratings" element={<Ratings />} />
+          </Routes>
         </div>
       </main>
     </div>

@@ -142,6 +142,45 @@ app.get('/api/ratings', (req, res) => {
   res.json({ ratings: rows });
 });
 
+// GET /api/ratings/aggregate - Get aggregate ratings by restaurant
+app.get('/api/ratings/aggregate', (req, res) => {
+  const limit = req.query.limit ? parseInt(req.query.limit, 10) : undefined;
+  
+  const query = `
+    SELECT 
+      restaurant,
+      COUNT(*) as count,
+      AVG(overall) as avg_overall,
+      AVG(food) as avg_food,
+      AVG(service) as avg_service,
+      AVG(choice) as avg_choice,
+      AVG(value) as avg_value,
+      AVG(spiceLevel) as avg_spice_level
+    FROM ratings
+    GROUP BY restaurant
+    ORDER BY avg_overall DESC
+    ${limit ? 'LIMIT ?' : ''}
+  `;
+  
+  const rows = limit 
+    ? db.prepare(query).all(limit)
+    : db.prepare(query).all();
+  
+  const aggregates = rows.map((row, index) => ({
+    rank: index + 1,
+    restaurant: row.restaurant,
+    count: row.count,
+    avgOverall: Number(row.avg_overall.toFixed(2)),
+    avgFood: Number(row.avg_food.toFixed(2)),
+    avgService: Number(row.avg_service.toFixed(2)),
+    avgChoice: Number(row.avg_choice.toFixed(2)),
+    avgValue: Number(row.avg_value.toFixed(2)),
+    avgSpiceLevel: Number(row.avg_spice_level.toFixed(2))
+  }));
+  
+  res.json({ aggregates });
+});
+
 // Health check
 app.get('/_health', (req, res) => {
   res.json({ status: 'ok' });
