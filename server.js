@@ -1,7 +1,7 @@
 import express from 'express';
 import Database from 'better-sqlite3';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname, join, basename } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -13,19 +13,18 @@ const DB_PATH = process.env.DB_PATH || join(__dirname, 'ratings.db');
 // Middleware
 app.use(express.json());
 
-// Serve static files with proper cache headers
-// Assets with hashes can be cached for a long time
+// Serve static assets with long-term caching (files with content hashes)
 app.use('/assets', express.static(join(__dirname, 'dist/assets'), {
   maxAge: '1y',
   immutable: true
 }));
 
-// index.html should not be cached to ensure routing updates are picked up
+// Serve other static files (like logo.png) with moderate caching
 app.use(express.static(join(__dirname, 'dist'), {
-  maxAge: 0,
-  etag: false,
+  maxAge: '1h',
   setHeaders: (res, path) => {
-    if (path.endsWith('index.html')) {
+    // index.html should never be cached to ensure routing updates work
+    if (basename(path) === 'index.html') {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');

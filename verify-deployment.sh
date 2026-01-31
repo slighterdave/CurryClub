@@ -32,7 +32,7 @@ fi
 # Check if index.html exists and show last modified time
 if [ -f "dist/index.html" ]; then
     echo "✅ dist/index.html exists"
-    echo "   Last modified: $(stat -c %y dist/index.html 2>/dev/null || stat -f %Sm dist/index.html 2>/dev/null || echo 'unknown')"
+    echo "   Last modified: $(ls -l dist/index.html | awk '{print $6, $7, $8}')"
     echo ""
 else
     echo "❌ ERROR: dist/index.html does not exist!"
