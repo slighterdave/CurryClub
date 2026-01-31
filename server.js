@@ -94,19 +94,7 @@ app.post('/api/ratings', (req, res) => {
     return res.status(400).json({ error: 'invalid_request' });
   }
 
-  const schema = {
-    restaurant: 'string',
-    ratings: {
-      food: 'number',
-      service: 'number',
-      choice: 'number',
-      value: 'number',
-      spiceLevel: 'number'
-    },
-    notes: 'string?'
-  };
-
-  // Simple validation
+  // Validation
   if (typeof body.restaurant !== 'string' || !body.restaurant.trim()) {
     return res.status(400).json({ error: 'invalid_restaurant' });
   }

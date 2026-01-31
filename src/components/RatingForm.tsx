@@ -98,8 +98,9 @@ export function RatingForm() {
       // success — reset form
       setRatings({ food:0, service:0, choice:0, value:0, spiceLevel:0 });
       setRestaurant('');
-      // optionally refresh ratings list or show a success message
-      window.location.reload(); // simple UX: reload to show saved entry
+      alert('Rating submitted successfully!');
+      // Note: In a production app, you would update state to show the new rating
+      // or navigate to a success page instead of using alert()
     } catch (err) {
       console.error(err);
       alert('Network error');
