@@ -2,6 +2,11 @@
 
 A curry house rating application built with React, Vite, and Express.
 
+## Quick Start
+
+- **Development Setup**: See instructions below
+- **Production Deployment**: See [DEPLOYMENT.md](DEPLOYMENT.md) for step-by-step EC2 Ubuntu deployment instructions
+
 ## Development
 
 ### Running the Development Server
