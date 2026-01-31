@@ -1,7 +1,8 @@
 import express from 'express';
 import Database from 'better-sqlite3';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname, join, basename } from 'path';
+import { existsSync } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -10,9 +11,36 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const DB_PATH = process.env.DB_PATH || join(__dirname, 'ratings.db');
 
+// Check if dist directory exists
+const distPath = join(__dirname, 'dist');
+if (!existsSync(distPath)) {
+  console.error('❌ ERROR: dist directory not found!');
+  console.error('   Please run: npm run build');
+  console.error('   This will create the dist directory with the production build.');
+  process.exit(1);
+}
+
 // Middleware
 app.use(express.json());
-app.use(express.static(join(__dirname, 'dist')));
+
+// Serve static assets with long-term caching (files with content hashes)
+app.use('/assets', express.static(join(__dirname, 'dist/assets'), {
+  maxAge: '1y',
+  immutable: true
+}));
+
+// Serve other static files (like logo.png) with moderate caching
+app.use(express.static(join(__dirname, 'dist'), {
+  maxAge: '1h',
+  setHeaders: (res, path) => {
+    // index.html should never be cached to ensure routing updates work
+    if (basename(path) === 'index.html') {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
 
 // Database setup
 const db = new Database(DB_PATH);

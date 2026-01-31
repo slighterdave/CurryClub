@@ -29,6 +29,14 @@ echo ""
 echo "🔨 Building application..."
 npm run build
 
+# Verify dist directory was created
+if [ ! -d "dist" ]; then
+    echo ""
+    echo "❌ ERROR: Build failed - dist directory not created!"
+    echo "   Please check the build output above for errors."
+    exit 1
+fi
+
 echo ""
 echo "✅ Build complete!"
 echo ""
@@ -38,7 +46,10 @@ if command -v pm2 &> /dev/null; then
     echo "🔄 Restarting application with PM2..."
     # Check if curryclub process exists in PM2
     if pm2 describe curryclub > /dev/null 2>&1; then
-        pm2 restart curryclub
+        echo "   Stopping existing process..."
+        pm2 delete curryclub
+        echo "   Starting fresh process..."
+        pm2 start server.js --name curryclub
     else
         pm2 start server.js --name curryclub
     fi
@@ -59,3 +70,7 @@ fi
 
 echo ""
 echo "🎉 Deployment script finished!"
+echo ""
+echo "⚠️  IMPORTANT: Clear your browser cache!"
+echo "   Press Ctrl+Shift+Delete (or Cmd+Shift+Delete on Mac)"
+echo "   Or do a hard refresh: Ctrl+Shift+R (or Cmd+Shift+R on Mac)"
