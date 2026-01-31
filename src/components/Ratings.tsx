@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 
 type AggregateRating = {
   rank: number;
@@ -60,7 +61,12 @@ export function Ratings() {
   if (aggregates.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-gray-600 text-lg">No ratings yet. Be the first to rate a restaurant!</div>
+        <div className="text-gray-600 text-lg">
+          No ratings yet.{' '}
+          <Link to="/" className="text-orange-600 hover:text-orange-700 underline">
+            Be the first to rate a restaurant!
+          </Link>
+        </div>
       </div>
     );
   }
