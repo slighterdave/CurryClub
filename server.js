@@ -12,7 +12,26 @@ const DB_PATH = process.env.DB_PATH || join(__dirname, 'ratings.db');
 
 // Middleware
 app.use(express.json());
-app.use(express.static(join(__dirname, 'dist')));
+
+// Serve static files with proper cache headers
+// Assets with hashes can be cached for a long time
+app.use('/assets', express.static(join(__dirname, 'dist/assets'), {
+  maxAge: '1y',
+  immutable: true
+}));
+
+// index.html should not be cached to ensure routing updates are picked up
+app.use(express.static(join(__dirname, 'dist'), {
+  maxAge: 0,
+  etag: false,
+  setHeaders: (res, path) => {
+    if (path.endsWith('index.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
 
 // Database setup
 const db = new Database(DB_PATH);
