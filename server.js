@@ -2,6 +2,7 @@ import express from 'express';
 import Database from 'better-sqlite3';
 import { fileURLToPath } from 'url';
 import { dirname, join, basename } from 'path';
+import { existsSync } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -9,6 +10,15 @@ const __dirname = dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3000;
 const DB_PATH = process.env.DB_PATH || join(__dirname, 'ratings.db');
+
+// Check if dist directory exists
+const distPath = join(__dirname, 'dist');
+if (!existsSync(distPath)) {
+  console.error('❌ ERROR: dist directory not found!');
+  console.error('   Please run: npm run build');
+  console.error('   This will create the dist directory with the production build.');
+  process.exit(1);
+}
 
 // Middleware
 app.use(express.json());

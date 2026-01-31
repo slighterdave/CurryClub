@@ -29,6 +29,14 @@ echo ""
 echo "🔨 Building application..."
 npm run build
 
+# Verify dist directory was created
+if [ ! -d "dist" ]; then
+    echo ""
+    echo "❌ ERROR: Build failed - dist directory not created!"
+    echo "   Please check the build output above for errors."
+    exit 1
+fi
+
 echo ""
 echo "✅ Build complete!"
 echo ""

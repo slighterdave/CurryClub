@@ -93,7 +93,52 @@ This will check:
 - Try in incognito/private window
 - Check browser console for errors (F12 → Console tab)
 
-### Issue 2: Server not responding
+### Issue 2: PM2 shows "errored" status
+**Problem**: PM2 status shows application in "errored" state with status "errored" and multiple restarts.
+
+**Symptoms**:
+```bash
+pm2 list
+# Shows: status: errored, pid: 0, uptime: 0, ↺: 15 (or higher)
+```
+
+**Common Causes**:
+1. **Missing dependencies** - node_modules not installed
+2. **Missing dist folder** - Application not built
+3. **Port already in use** - Another process using port 3000
+4. **Database error** - Issues with SQLite database
+
+**Solution**:
+```bash
+# First, check PM2 logs to see the actual error
+pm2 logs curryclub --lines 50
+
+# Most common fix: Install and build
+cd /home/ubuntu/CurryClub
+npm install
+npm run build
+
+# Then restart PM2
+pm2 delete curryclub
+pm2 start server.js --name curryclub
+pm2 save
+
+# Verify it's running
+pm2 status
+```
+
+**If error persists**:
+```bash
+# Try running the server directly to see the error
+node server.js
+
+# Common errors and fixes:
+# - "Cannot find package 'express'" → Run: npm install
+# - "dist directory not found" → Run: npm run build
+# - "EADDRINUSE" → Port 3000 in use, kill other process
+```
+
+### Issue 3: Server not responding
 **Solution**:
 ```bash
 pm2 status                    # Check if curryclub is running
@@ -101,7 +146,7 @@ pm2 logs curryclub           # Check for errors
 pm2 restart curryclub        # Try restarting
 ```
 
-### Issue 3: Port 3000 already in use
+### Issue 4: Port 3000 already in use
 **Solution**:
 ```bash
 # Find what's using port 3000
