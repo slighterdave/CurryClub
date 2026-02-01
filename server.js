@@ -209,6 +209,11 @@ app.post('/api/ratings', (req, res) => {
 
   // Sanitize notes as well
   const sanitizedNotes = body.notes ? sanitizeInput(body.notes) : null;
+  
+  // Validate notes length (cap at 255 characters)
+  if (sanitizedNotes && sanitizedNotes.length > 255) {
+    return res.status(400).json({ error: 'notes_too_long', message: 'Notes must be 255 characters or less.' });
+  }
 
   // proceed to insert (use sanitized values)
   const info = insertStmt.run({
