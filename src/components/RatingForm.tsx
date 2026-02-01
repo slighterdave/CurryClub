@@ -23,6 +23,7 @@ export function RatingForm() {
     spiceLevel: 0,
   });
 
+  const [notes, setNotes] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -107,7 +108,7 @@ export function RatingForm() {
     const payload = {
       restaurant,
       ratings,
-      notes: '',
+      notes: notes.trim(),
     };
     try {
       const res = await fetch('/api/ratings', {
@@ -123,6 +124,7 @@ export function RatingForm() {
       // success — reset form
       setRatings({ food:0, service:0, choice:0, value:0, spiceLevel:0 });
       setRestaurant('');
+      setNotes('');
       alert('Rating submitted successfully!');
     } catch (err) {
       console.error(err);
@@ -265,6 +267,32 @@ export function RatingForm() {
             </div>
           </div>
         ))}
+      </div>
+
+      {/* Notes Section */}
+      <div className="space-y-2">
+        <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
+          Notes <span className="text-gray-500 font-normal">(optional)</span>
+        </label>
+        <textarea
+          id="notes"
+          value={notes}
+          onChange={e => {
+            const value = e.target.value;
+            // Enforce 255 character limit
+            if (value.length <= 255) {
+              setNotes(value);
+            }
+          }}
+          placeholder="Add any additional comments about your experience..."
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all resize-vertical min-h-[100px]"
+          maxLength={255}
+        />
+        <div className="flex justify-end">
+          <span className={`text-sm ${notes.length > 240 ? 'text-orange-600 font-medium' : 'text-gray-500'}`}>
+            {notes.length}/255 characters
+          </span>
+        </div>
       </div>
 
       <div className="pt-4 border-t border-gray-200">
