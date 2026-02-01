@@ -2,6 +2,11 @@
 
 A curry house rating application built with React, Vite, and Express.
 
+## Documentation
+
+- **API Documentation**: See [API_DOCUMENTATION.md](API_DOCUMENTATION.md) for details on restaurant submission, validation, and security features
+- **Production Deployment**: See [DEPLOYMENT.md](DEPLOYMENT.md) for step-by-step EC2 Ubuntu deployment instructions
+
 ## Quick Start
 
 - **Development Setup**: See instructions below
