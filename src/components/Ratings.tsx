@@ -13,6 +13,11 @@ type AggregateRating = {
   avgSpiceLevel: number;
 };
 
+// Helper function to format rating to 1 decimal place
+function formatRating(value: number): string {
+  return value.toFixed(1);
+}
+
 export function Ratings() {
   const [aggregates, setAggregates] = useState<AggregateRating[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,30 +114,30 @@ export function Ratings() {
                     fill="currentColor"
                   />
                 </svg>
-                <span className="text-3xl font-bold text-orange-600">{aggregate.avgOverall}</span>
+                <span className="text-3xl font-bold text-orange-600">{formatRating(aggregate.avgOverall)}</span>
               </div>
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4 pt-4 border-t border-gray-200">
               <div className="text-center">
                 <div className="text-sm text-gray-600 mb-1">Food</div>
-                <div className="text-lg font-semibold text-gray-800">{aggregate.avgFood}</div>
+                <div className="text-lg font-semibold text-gray-800">{formatRating(aggregate.avgFood)}</div>
               </div>
               <div className="text-center">
                 <div className="text-sm text-gray-600 mb-1">Service</div>
-                <div className="text-lg font-semibold text-gray-800">{aggregate.avgService}</div>
+                <div className="text-lg font-semibold text-gray-800">{formatRating(aggregate.avgService)}</div>
               </div>
               <div className="text-center">
                 <div className="text-sm text-gray-600 mb-1">Choice</div>
-                <div className="text-lg font-semibold text-gray-800">{aggregate.avgChoice}</div>
+                <div className="text-lg font-semibold text-gray-800">{formatRating(aggregate.avgChoice)}</div>
               </div>
               <div className="text-center">
                 <div className="text-sm text-gray-600 mb-1">Value</div>
-                <div className="text-lg font-semibold text-gray-800">{aggregate.avgValue}</div>
+                <div className="text-lg font-semibold text-gray-800">{formatRating(aggregate.avgValue)}</div>
               </div>
               <div className="text-center">
                 <div className="text-sm text-gray-600 mb-1">Spice</div>
-                <div className="text-lg font-semibold text-gray-800">{aggregate.avgSpiceLevel}</div>
+                <div className="text-lg font-semibold text-gray-800">{formatRating(aggregate.avgSpiceLevel)}</div>
               </div>
             </div>
           </div>
