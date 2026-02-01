@@ -65,10 +65,11 @@ pm2 status
 After deployment:
 
 1. **Clear your browser cache** (important!):
-   - Chrome/Edge: `Ctrl+Shift+Delete` (Windows) or `Cmd+Shift+Delete` (Mac)
-   - Or do a hard refresh: `Ctrl+Shift+R` (Windows) or `Cmd+Shift+R` (Mac)
+   - **Hard Refresh:** `Ctrl+Shift+R` (Windows/Linux) or `Cmd+Shift+R` (Mac)
+   - Or open an Incognito/Private window
+   - See [TROUBLESHOOTING_CHANGES.md](TROUBLESHOOTING_CHANGES.md) for more options
 
-2. Visit http://13.49.111.162:3001
+2. Visit http://13.49.111.162:3001 (or port 80 if using Nginx)
 
 3. Open the menu (click hamburger icon in top-right)
 
@@ -76,6 +77,8 @@ After deployment:
    - Home
    - Top Rated
    - About
+
+**Still seeing old content?** See [TROUBLESHOOTING_CHANGES.md](TROUBLESHOOTING_CHANGES.md) for a comprehensive troubleshooting checklist.
 
 ## Why This Happened
 
