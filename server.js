@@ -226,6 +226,11 @@ app.get('/api/ratings', (req, res) => {
 
 // GET /api/ratings/aggregate - Get aggregate ratings by restaurant
 app.get('/api/ratings/aggregate', (req, res) => {
+  // Set cache control headers to prevent stale data
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  
   const limit = req.query.limit ? parseInt(req.query.limit, 10) : undefined;
   
   const query = `

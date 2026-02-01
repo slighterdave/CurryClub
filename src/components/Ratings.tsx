@@ -23,6 +23,7 @@ export function Ratings() {
   const [loading, setLoading] = useState(true);
   const [showAll, setShowAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     console.log('Ratings component mounted');
@@ -32,7 +33,9 @@ export function Ratings() {
   async function fetchAggregates() {
     try {
       setLoading(true);
-      const response = await fetch('/api/ratings/aggregate');
+      setError(null);
+      // Add cache-busting parameter to ensure fresh data
+      const response = await fetch(`/api/ratings/aggregate?t=${Date.now()}`);
       if (!response.ok) {
         throw new Error('Failed to fetch ratings');
       }
@@ -44,6 +47,12 @@ export function Ratings() {
     } finally {
       setLoading(false);
     }
+  }
+
+  async function handleRefresh() {
+    setRefreshing(true);
+    await fetchAggregates();
+    setRefreshing(false);
   }
 
   const displayedAggregates = showAll ? aggregates : aggregates.slice(0, 10);
@@ -82,6 +91,28 @@ export function Ratings() {
       <div className="text-center mb-8">
         <h2 className="text-3xl font-bold text-gray-800 mb-2">Restaurant Ratings</h2>
         <p className="text-gray-600">Aggregate scores from all submissions</p>
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          aria-label="Refresh ratings"
+        >
+          <svg
+            className={`w-5 h-5 ${refreshing ? 'animate-spin' : ''}`}
+            fill="none"
+            strokeWidth="2"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
+          </svg>
+          <span>{refreshing ? 'Refreshing...' : 'Refresh'}</span>
+        </button>
       </div>
 
       <div className="space-y-4">
