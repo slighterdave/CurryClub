@@ -1,5 +1,6 @@
 node_modules
 dist
+Assets
 *.db
 .DS_Store
 *.log
