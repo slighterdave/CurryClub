@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 type Rating = {
   id: number;
@@ -37,29 +37,35 @@ export function RatingsModal({ restaurantName, onClose }: RatingsModalProps) {
   const [ratings, setRatings] = useState<Rating[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const onCloseRef = useRef(onClose);
+
+  // Update ref when onClose changes
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
 
   useEffect(() => {
+    async function fetchRatings() {
+      try {
+        setLoading(true);
+        setError(null);
+        const encodedName = encodeURIComponent(restaurantName);
+        const response = await fetch(`/api/ratings/restaurant/${encodedName}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch ratings');
+        }
+        const data = await response.json();
+        setRatings(data.ratings || []);
+      } catch (err) {
+        console.error('Error fetching ratings:', err);
+        setError('Failed to load ratings');
+      } finally {
+        setLoading(false);
+      }
+    }
+    
     fetchRatings();
   }, [restaurantName]);
-
-  async function fetchRatings() {
-    try {
-      setLoading(true);
-      setError(null);
-      const encodedName = encodeURIComponent(restaurantName);
-      const response = await fetch(`/api/ratings/restaurant/${encodedName}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch ratings');
-      }
-      const data = await response.json();
-      setRatings(data.ratings || []);
-    } catch (err) {
-      console.error('Error fetching ratings:', err);
-      setError('Failed to load ratings');
-    } finally {
-      setLoading(false);
-    }
-  }
 
   // Handle clicking the backdrop
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -72,12 +78,12 @@ export function RatingsModal({ restaurantName, onClose }: RatingsModalProps) {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose();
+        onCloseRef.current();
       }
     };
     window.addEventListener('keydown', handleEscape);
     return () => window.removeEventListener('keydown', handleEscape);
-  }, [onClose]);
+  }, []);
 
   return (
     <div
