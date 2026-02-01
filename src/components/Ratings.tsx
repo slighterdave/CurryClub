@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { RatingsModal } from './RatingsModal';
 
 type AggregateRating = {
   rank: number;
@@ -24,6 +25,7 @@ export function Ratings() {
   const [showAll, setShowAll] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedRestaurant, setSelectedRestaurant] = useState<string | null>(null);
 
   useEffect(() => {
     console.log('Ratings component mounted');
@@ -134,7 +136,16 @@ export function Ratings() {
         {displayedAggregates.map((aggregate) => (
           <div
             key={aggregate.restaurant}
-            className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition-shadow"
+            className="bg-white rounded-lg shadow-md border border-gray-200 p-6 hover:shadow-lg transition-all cursor-pointer hover:border-orange-300"
+            onClick={() => setSelectedRestaurant(aggregate.restaurant)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                setSelectedRestaurant(aggregate.restaurant);
+              }
+            }}
           >
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-4">
@@ -199,6 +210,14 @@ export function Ratings() {
             {showAll ? 'Show Top 10' : `Show All (${aggregates.length})`}
           </button>
         </div>
+      )}
+
+      {/* Modal for displaying individual ratings */}
+      {selectedRestaurant && (
+        <RatingsModal
+          restaurantName={selectedRestaurant}
+          onClose={() => setSelectedRestaurant(null)}
+        />
       )}
     </div>
   );

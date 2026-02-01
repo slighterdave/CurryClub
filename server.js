@@ -232,6 +232,23 @@ app.get('/api/ratings', noCacheMiddleware, (req, res) => {
   res.json({ ratings: rows });
 });
 
+// GET /api/ratings/restaurant/:name - Get all ratings for a specific restaurant
+app.get('/api/ratings/restaurant/:name', noCacheMiddleware, (req, res) => {
+  const restaurantName = req.params.name;
+  if (!restaurantName) {
+    return res.status(400).json({ error: 'restaurant_name_required' });
+  }
+  
+  // Use case-insensitive matching to find all ratings for this restaurant
+  const rows = db.prepare(`
+    SELECT * FROM ratings 
+    WHERE LOWER(restaurant) = LOWER(?) 
+    ORDER BY created_at DESC
+  `).all(restaurantName);
+  
+  res.json({ ratings: rows });
+});
+
 // GET /api/ratings/aggregate - Get aggregate ratings by restaurant
 app.get('/api/ratings/aggregate', noCacheMiddleware, (req, res) => {
   const limit = req.query.limit ? parseInt(req.query.limit, 10) : undefined;
