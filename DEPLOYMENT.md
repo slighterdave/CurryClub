@@ -7,7 +7,7 @@ This guide provides step-by-step instructions for deploying the CurryClub applic
 Before starting, ensure you have:
 - An EC2 Ubuntu instance (20.04 LTS or newer recommended)
 - SSH access to your EC2 instance
-- Security group configured to allow inbound traffic on port 3000 (or your chosen port)
+- Security group configured to allow inbound traffic on port 3001 (or your chosen port)
 
 **Note**: If you're updating an existing deployment that may have outdated files, see [SERVER_CLEANUP.md](SERVER_CLEANUP.md) for cleanup instructions first.
 
@@ -123,7 +123,7 @@ nano .env
 Add any environment variables you need:
 
 ```
-PORT=3000
+PORT=3001
 DB_PATH=/home/ubuntu/CurryClub/ratings.db
 ```
 
@@ -139,7 +139,7 @@ For testing purposes, you can run the server manually:
 npm run server
 ```
 
-The application will be available at `http://your-ec2-public-ip:3000`
+The application will be available at `http://your-ec2-public-ip:3001`
 
 To stop the server, press `Ctrl+C`.
 
@@ -258,7 +258,7 @@ server {
     server_name your-domain.com;  # Or your EC2 public IP
 
     location / {
-        proxy_pass http://localhost:3000;
+        proxy_pass http://localhost:3001;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -321,11 +321,11 @@ If the deployed version doesn't match your repository, you may have outdated fil
 
 ### Port Already in Use
 
-If you get an error that port 3000 is already in use:
+If you get an error that port 3001 is already in use:
 
 ```bash
-# Find the process using port 3000
-sudo lsof -i :3000
+# Find the process using port 3001
+sudo lsof -i :3001
 
 # Kill the process (replace PID with the actual process ID)
 kill -9 PID

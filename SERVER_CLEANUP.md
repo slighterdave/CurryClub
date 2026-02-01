@@ -104,7 +104,7 @@ pm2 logs curryclub --lines 20
 
 ### Step 9: Test the Application
 
-1. Open your browser and navigate to: `http://13.49.111.162:3000`
+1. Open your browser and navigate to: `http://13.49.111.162:3001`
 2. Clear your browser cache (Ctrl+Shift+Delete or Cmd+Shift+Delete)
 3. Or do a hard refresh: Ctrl+Shift+R (or Cmd+Shift+R on Mac)
 4. Test navigation and all features
@@ -255,7 +255,7 @@ After cleanup, verify:
 - [ ] `node_modules/` exists with all packages
 - [ ] No `Assets/` directory exists
 - [ ] PM2 shows status "online" for curryclub
-- [ ] Application responds at http://localhost:3000
+- [ ] Application responds at http://localhost:3001
 - [ ] JavaScript and CSS files load correctly
 - [ ] /ratings route works correctly
 - [ ] No outdated .md files exist (PM2_ERROR_FIX.md, etc.)
@@ -287,11 +287,11 @@ npm install
 npm run build
 ```
 
-### If port 3000 is in use
+### If port 3001 is in use
 
 ```bash
 # Find what's using the port
-sudo lsof -i :3000
+sudo lsof -i :3001
 
 # Kill the specific process (replace PID)
 kill -9 PID
@@ -306,4 +306,4 @@ For additional help, refer to:
 Or check:
 - PM2 logs: `pm2 logs curryclub`
 - Server logs: `sudo journalctl -u nginx` (if using Nginx)
-- Application health: `curl http://localhost:3000/_health`
+- Application health: `curl http://localhost:3001/_health`

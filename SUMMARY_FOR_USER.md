@@ -49,7 +49,7 @@ Open `BASH_COMMANDS.txt` in this repository for formatted instructions.
    ```
 
 2. Test in your browser:
-   - Open: http://13.49.111.162:3000
+   - Open: http://13.49.111.162:3001
    - Clear browser cache: `Ctrl+Shift+Delete` (or `Cmd+Shift+Delete` on Mac)
    - Or hard refresh: `Ctrl+Shift+R` (or `Cmd+Shift+R` on Mac)
 

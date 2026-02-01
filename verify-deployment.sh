@@ -46,26 +46,26 @@ if command -v pm2 &> /dev/null; then
     echo ""
 fi
 
-# Check if port 3000 is in use
+# Check if port 3001 is in use
 if command -v lsof &> /dev/null; then
-    echo "🌐 Port 3000 status:"
-    lsof -i :3000 || echo "   Port 3000 is not in use"
+    echo "🌐 Port 3001 status:"
+    lsof -i :3001 || echo "   Port 3001 is not in use"
     echo ""
 elif command -v netstat &> /dev/null; then
-    echo "🌐 Port 3000 status:"
-    netstat -tuln | grep :3000 || echo "   Port 3000 is not in use"
+    echo "🌐 Port 3001 status:"
+    netstat -tuln | grep :3001 || echo "   Port 3001 is not in use"
     echo ""
 fi
 
 # Try to fetch from localhost
 if command -v curl &> /dev/null; then
     echo "🌐 Testing local server response:"
-    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ 2>/dev/null || echo "000")
+    HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/ 2>/dev/null || echo "000")
     if [ "$HTTP_CODE" = "200" ]; then
         echo "   ✅ Server responding with HTTP 200"
         
         # Check if the HTML contains the expected content
-        RESPONSE=$(curl -s http://localhost:3000/)
+        RESPONSE=$(curl -s http://localhost:3001/)
         if echo "$RESPONSE" | grep -q "Top Ratings"; then
             echo "   ✅ Page contains 'Top Ratings' text"
         else
@@ -75,7 +75,7 @@ if command -v curl &> /dev/null; then
         # Check JavaScript bundle
         JS_FILE=$(grep -o '/assets/index-[^"]*\.js' dist/index.html | head -1)
         if [ -n "$JS_FILE" ]; then
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:3000${JS_FILE}" 2>/dev/null || echo "000")
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:3001${JS_FILE}" 2>/dev/null || echo "000")
             if [ "$HTTP_CODE" = "200" ]; then
                 echo "   ✅ JavaScript bundle loads correctly"
             else
@@ -86,7 +86,7 @@ if command -v curl &> /dev/null; then
         # Check CSS file
         CSS_FILE=$(grep -o '/assets/index-[^"]*\.css' dist/index.html | head -1)
         if [ -n "$CSS_FILE" ]; then
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:3000${CSS_FILE}" 2>/dev/null || echo "000")
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:3001${CSS_FILE}" 2>/dev/null || echo "000")
             if [ "$HTTP_CODE" = "200" ]; then
                 echo "   ✅ CSS file loads correctly"
             else
@@ -95,7 +95,7 @@ if command -v curl &> /dev/null; then
         fi
         
         # Test /ratings route
-        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ratings 2>/dev/null || echo "000")
+        HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3001/ratings 2>/dev/null || echo "000")
         if [ "$HTTP_CODE" = "200" ]; then
             echo "   ✅ /ratings route responds with HTTP 200"
         else

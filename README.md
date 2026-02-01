@@ -31,7 +31,7 @@ npm run server
 
 This will:
 1. Build the application to the `dist` folder
-2. Start the Express server on `http://localhost:3000`
+2. Start the Express server on `http://localhost:3001`
 
 ## Important Notes
 
