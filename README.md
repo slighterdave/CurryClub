@@ -6,7 +6,9 @@ A curry house rating application built with React, Vite, and Express.
 
 - **Development Setup**: See instructions below
 - **Production Deployment**: See [DEPLOYMENT.md](DEPLOYMENT.md) for step-by-step EC2 Ubuntu deployment instructions
-- **Server Cleanup**: See [SERVER_CLEANUP.md](SERVER_CLEANUP.md) if you need to clean up outdated files on your production server
+- **Server Cleanup**: If you need to clean up outdated files on your production server:
+  - **Quick Commands**: See [QUICK_START.md](QUICK_START.md) for fastest cleanup
+  - **Detailed Guide**: See [SERVER_CLEANUP.md](SERVER_CLEANUP.md) for step-by-step instructions
 
 ## Development
 
