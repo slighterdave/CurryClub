@@ -143,32 +143,61 @@ export function RatingForm() {
               + Add new restaurant
             </button>
           ) : (
-            <div className="flex gap-2 items-center p-3 bg-gray-50 rounded-lg">
+            <div className="space-y-2 p-3 bg-gray-50 rounded-lg">
               <input
                 type="text"
                 value={newRestaurant}
                 onChange={e => setNewRestaurant(e.target.value)}
                 placeholder="Restaurant name"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
               />
-              <button
-                type="button"
-                onClick={handleAddRestaurant}
-                disabled={adding}
-                className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-gray-400 font-medium"
-              >
-                {adding ? 'Adding...' : 'Add'}
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setShowAddForm(false);
-                  setNewRestaurant('');
-                }}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-medium"
-              >
-                Cancel
-              </button>
+              <div className="flex gap-3 justify-center">
+                <button
+                  type="button"
+                  onClick={handleAddRestaurant}
+                  disabled={adding}
+                  aria-label="Confirm add restaurant"
+                  className="p-2 rounded-full bg-orange-600 text-white hover:bg-orange-700 disabled:bg-gray-400 transition-all active:scale-95"
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="stroke-current"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setNewRestaurant('');
+                  }}
+                  aria-label="Cancel add restaurant"
+                  className="p-2 rounded-full bg-orange-600 text-white hover:bg-orange-700 transition-all active:scale-95"
+                >
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="stroke-current"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              </div>
             </div>
           )}
         </div>
