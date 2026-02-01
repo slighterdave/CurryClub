@@ -240,7 +240,11 @@ pm2 restart curryclub  # If using PM2
 
 ### 1. Use a Reverse Proxy (Nginx)
 
-For production, it's recommended to use Nginx as a reverse proxy:
+For production, it's **strongly recommended** to use Nginx as a reverse proxy. This is especially important if you're not seeing changes after deploying updates.
+
+**📖 See the comprehensive guide:** [NGINX_CONFIGURATION.md](NGINX_CONFIGURATION.md)
+
+Quick setup:
 
 ```bash
 # Install Nginx
@@ -250,12 +254,12 @@ sudo apt install -y nginx
 sudo nano /etc/nginx/sites-available/curryclub
 ```
 
-Add this configuration:
+Add this basic configuration (see [NGINX_CONFIGURATION.md](NGINX_CONFIGURATION.md) for full version with no-cache headers):
 
 ```nginx
 server {
     listen 80;
-    server_name your-domain.com;  # Or your EC2 public IP
+    server_name your-domain.com;  # Or your EC2 public IP or just use _
 
     location / {
         proxy_pass http://localhost:3001;
@@ -266,6 +270,10 @@ server {
         proxy_cache_bypass $http_upgrade;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        
+        # Important: Disable caching to see updates immediately
+        proxy_no_cache 1;
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
     }
 }
 ```
@@ -284,6 +292,8 @@ sudo systemctl restart nginx
 ```
 
 Now your app will be available on port 80 (HTTP).
+
+**For complete instructions including troubleshooting cache issues, see [NGINX_CONFIGURATION.md](NGINX_CONFIGURATION.md)**
 
 ### 2. Set Up HTTPS with Let's Encrypt (Optional)
 

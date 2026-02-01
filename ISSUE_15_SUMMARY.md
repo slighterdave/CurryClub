@@ -54,9 +54,11 @@ The correct menu structure has 3 items:
 Reference screenshot showing correct structure:
 ![Correct Menu](https://github.com/user-attachments/assets/bc68c097-2539-43ed-9acf-8432154daa11)
 
-## Related Files
+## Related Documentation
 
 - [FIX_DEPLOYED_MENU.md](FIX_DEPLOYED_MENU.md) - Deployment fix instructions
+- [NGINX_CONFIGURATION.md](NGINX_CONFIGURATION.md) - Complete Nginx setup guide
+- [TROUBLESHOOTING_CHANGES.md](TROUBLESHOOTING_CHANGES.md) - Quick troubleshooting checklist
 - [DEPLOYMENT.md](DEPLOYMENT.md) - Full deployment guide
 - [deploy.sh](deploy.sh) - Automated deployment script
 - [src/App.tsx](src/App.tsx) - Menu implementation (lines 78-114)
