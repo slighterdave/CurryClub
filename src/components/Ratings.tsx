@@ -33,6 +33,7 @@ export function Ratings() {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
         console.log('Page became visible, refreshing ratings');
+        // Don't set loading state for background refreshes to avoid UI flicker
         fetchAggregates();
       }
     };

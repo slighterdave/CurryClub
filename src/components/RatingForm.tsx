@@ -71,7 +71,9 @@ export function RatingForm() {
         // Restaurant already exists
         alert(`Restaurant "${data.restaurant?.name || name}" already exists!`);
         // Refresh list and select the existing restaurant
-        await refreshRestaurants(data.restaurant?.name);
+        const addedName = data.restaurant?.name || name;
+        await fetchRestaurants();
+        if (restaurants.includes(addedName)) setRestaurant(addedName);
         setNewRestaurant('');
         setShowAddForm(false);
         return;
@@ -84,7 +86,8 @@ export function RatingForm() {
       
       const addedName = data?.restaurant?.name || name;
       // refresh list & select
-      await refreshRestaurants(addedName);
+      await fetchRestaurants();
+      if (restaurants.includes(addedName)) setRestaurant(addedName);
       setNewRestaurant('');
       setShowAddForm(false);
     } catch (err) {
@@ -92,19 +95,6 @@ export function RatingForm() {
       alert('Failed to add restaurant');
     } finally {
       setAdding(false);
-    }
-  }
-
-  async function refreshRestaurants(selectName?: string) {
-    try {
-      // Add cache-busting parameter to ensure fresh data
-      const res = await fetch(`/api/restaurants?t=${Date.now()}`);
-      const data = await res.json();
-      const list = (data?.restaurants || []).map((r: any) => r.name);
-      setRestaurants(list);
-      if (selectName && list.includes(selectName)) setRestaurant(selectName);
-    } catch (err) {
-      console.error('refresh restaurants', err);
     }
   }
 
