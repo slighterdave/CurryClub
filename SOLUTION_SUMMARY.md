@@ -1,14 +1,62 @@
 # Navigation Fix Summary
 
-## Issue Report
+## Latest Fix (February 2026)
+
+### Issue Report
+**User Problem**: "Top Rated" menu item still redirects to `13.49.111.162/#` instead of `/ratings`, and there are still 4 items in the menu, even after redeploying with `./deploy.sh` and clearing cache.
+
+### Root Cause Analysis
+The repository contained a committed `Assets/` directory with **old pre-React-Router build files**. These stale build artifacts were:
+- Committed to Git and being deployed to the server
+- Containing old navigation code with `<a href="#">` links (causing `/#` hash redirects)
+- Showing 4 menu items (the old menu structure)
+- Missing React Router implementation entirely
+
+Even though the source code (`App.tsx`) was correct and `dist/` was properly excluded via `.gitignore`, the old `Assets/` directory was overriding or conflicting with the deployment.
+
+### Solution
+1. **Removed the `Assets/` directory** from the repository
+   - Deleted 4 stale files: `index-CRcuHa9j.js`, `index-CkCd7Lkp.css`, image file, and `submit-fix.js`
+   - These contained the old pre-React-Router code
+
+2. **Added `Assets/` to `.gitignore`**
+   - Prevents future commits of build artifacts to this directory
+   - Ensures only `dist/` is used for deployments
+
+3. **Verified the fix**
+   - Built application: ✅ Success
+   - Navigation menu: ✅ 3 items (Home, Top Ratings, About)
+   - Routing: ✅ Uses React Router with `to="/ratings"`
+   - URL navigation: ✅ Changes to `/ratings` (no hash)
+   - Menu behavior: ✅ Closes after navigation
+
+### Files Changed
+- **Deleted**: `Assets/` directory (entire directory removed from Git)
+- **Modified**: `.gitignore` (added `Assets` exclusion)
+
+### Deployment Instructions
+After pulling this fix:
+```bash
+cd /home/ubuntu/CurryClub
+git pull origin main
+./deploy.sh
+```
+
+The navigation should now work correctly without any additional cache clearing needed.
+
+---
+
+## Previous Fix (Browser Caching Issue)
+
+### Issue Report
 **User Problem**: "Top Ratings" link in burger menu not navigating to the ratings page on EC2, despite running `npm run build` and restarting PM2 every time.
 
-## Root Cause Analysis
+### Root Cause Analysis
 The problem was **browser caching**, not the build or deployment process. The Express server was serving static files without proper cache control headers, causing browsers to cache `index.html` indefinitely. Since React Router configuration is in the JavaScript bundle referenced by index.html, stale cached versions prevented navigation updates from working.
 
 ## Solution Overview
 
-### 1. Server Cache Headers (server.js)
+### 1. Server Cache Headers (server.js) - STILL ACTIVE
 Implemented a three-tier caching strategy:
 
 - **Hashed Assets** (`/assets/*.js`, `/assets/*.css`): 
@@ -25,7 +73,7 @@ Implemented a three-tier caching strategy:
   - Cache: 1 hour
   - Reason: Balance between performance and freshness
 
-### 2. Improved Deployment (deploy.sh)
+### 2. Improved Deployment (deploy.sh) - STILL ACTIVE
 - Changed from `pm2 restart` to `pm2 delete + pm2 start`
 - Ensures complete process restart, not just reload
 - Added reminder to clear browser cache
