@@ -9,6 +9,8 @@ Before starting, ensure you have:
 - SSH access to your EC2 instance
 - Security group configured to allow inbound traffic on port 3000 (or your chosen port)
 
+**Note**: If you're updating an existing deployment that may have outdated files, see [SERVER_CLEANUP.md](SERVER_CLEANUP.md) for cleanup instructions first.
+
 ## Step 1: Connect to Your EC2 Instance
 
 ```bash
@@ -312,6 +314,10 @@ sudo ufw enable
 ```
 
 ## Troubleshooting
+
+### Version Mismatch Issues
+
+If the deployed version doesn't match your repository, you may have outdated files on the server. See [SERVER_CLEANUP.md](SERVER_CLEANUP.md) for comprehensive cleanup instructions.
 
 ### Port Already in Use
 
