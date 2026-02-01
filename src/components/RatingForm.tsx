@@ -156,7 +156,7 @@ export function RatingForm() {
                   type="button"
                   onClick={handleAddRestaurant}
                   disabled={adding}
-                  aria-label="Confirm add restaurant"
+                  aria-label="Add restaurant"
                   className="p-2 rounded-full bg-orange-600 text-white hover:bg-orange-700 disabled:bg-gray-400 transition-all active:scale-95"
                 >
                   <svg
@@ -179,7 +179,7 @@ export function RatingForm() {
                     setShowAddForm(false);
                     setNewRestaurant('');
                   }}
-                  aria-label="Cancel add restaurant"
+                  aria-label="Cancel"
                   className="p-2 rounded-full bg-orange-600 text-white hover:bg-orange-700 transition-all active:scale-95"
                 >
                   <svg
