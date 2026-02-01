@@ -97,7 +97,7 @@ function AppContent() {
                 }`}
               >
                 <StarIcon />
-                <span>Top Ratings</span>
+                <span>Top Rated</span>
               </Link>
             </li>
             <li>
