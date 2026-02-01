@@ -8,6 +8,9 @@ type Ratings = {
   spiceLevel: number;
 };
 
+const NOTES_MAX_LENGTH = 255;
+const NOTES_WARNING_THRESHOLD = 240;
+
 export function RatingForm() {
   const [restaurant, setRestaurant] = useState('');
   const [restaurants, setRestaurants] = useState<string[]>([]);
@@ -277,20 +280,14 @@ export function RatingForm() {
         <textarea
           id="notes"
           value={notes}
-          onChange={e => {
-            const value = e.target.value;
-            // Enforce 255 character limit
-            if (value.length <= 255) {
-              setNotes(value);
-            }
-          }}
+          onChange={e => setNotes(e.target.value)}
           placeholder="Add any additional comments about your experience..."
           className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all resize-vertical min-h-[100px]"
-          maxLength={255}
+          maxLength={NOTES_MAX_LENGTH}
         />
         <div className="flex justify-end">
-          <span className={`text-sm ${notes.length > 240 ? 'text-orange-600 font-medium' : 'text-gray-500'}`}>
-            {notes.length}/255 characters
+          <span className={`text-sm ${notes.length > NOTES_WARNING_THRESHOLD ? 'text-orange-600 font-medium' : 'text-gray-500'}`}>
+            {notes.length}/{NOTES_MAX_LENGTH} characters
           </span>
         </div>
       </div>
