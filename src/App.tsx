@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { RatingForm } from './components/RatingForm';
 import { Ratings } from './components/Ratings';
+import { About } from './components/About';
 
 // Simple icons as SVG components
 const MenuIcon = () => (
@@ -101,15 +102,16 @@ function AppContent() {
               </Link>
             </li>
             <li>
-              {/* Using button instead of anchor to avoid href="#" hash navigation */}
-              <button
-                type="button"
+              <Link 
+                to="/about" 
                 onClick={() => setMenuOpen(false)}
-                className="w-full text-left flex items-center gap-3 text-gray-700 hover:text-orange-600 transition-colors py-2"
+                className={`w-full text-left flex items-center gap-3 transition-colors py-2 ${
+                  location.pathname === '/about' ? 'text-orange-600' : 'text-gray-700 hover:text-orange-600'
+                }`}
               >
                 <InfoIcon />
                 <span>About</span>
-              </button>
+              </Link>
             </li>
           </ul>
         </nav>
@@ -137,6 +139,7 @@ function AppContent() {
               </>
             } />
             <Route path="/ratings" element={<Ratings />} />
+            <Route path="/about" element={<About />} />
           </Routes>
         </div>
       </main>
