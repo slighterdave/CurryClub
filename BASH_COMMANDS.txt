@@ -42,7 +42,7 @@ pm2 status
 │ STEP 4: Test in Browser                                           │
 └───────────────────────────────────────────────────────────────────┘
 
-1. Open: http://13.49.111.162:3000
+1. Open: http://13.49.111.162:3001
 2. Clear browser cache: Ctrl+Shift+Delete (or Cmd+Shift+Delete on Mac)
    OR do a hard refresh: Ctrl+Shift+R (or Cmd+Shift+R on Mac)
 3. Test navigation and all features
