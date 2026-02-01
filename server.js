@@ -236,18 +236,21 @@ app.get('/api/ratings', noCacheMiddleware, (req, res) => {
 app.get('/api/ratings/aggregate', noCacheMiddleware, (req, res) => {
   const limit = req.query.limit ? parseInt(req.query.limit, 10) : undefined;
   
+  // Only include ratings for restaurants that currently exist in the restaurants table
+  // Use the canonical restaurant name from the restaurants table (handles name updates)
   const query = `
     SELECT 
-      restaurant,
+      rest.name as restaurant,
       COUNT(*) as count,
-      AVG(overall) as avg_overall,
-      AVG(food) as avg_food,
-      AVG(service) as avg_service,
-      AVG(choice) as avg_choice,
-      AVG(value) as avg_value,
-      AVG(spiceLevel) as avg_spice_level
-    FROM ratings
-    GROUP BY restaurant
+      AVG(r.overall) as avg_overall,
+      AVG(r.food) as avg_food,
+      AVG(r.service) as avg_service,
+      AVG(r.choice) as avg_choice,
+      AVG(r.value) as avg_value,
+      AVG(r.spiceLevel) as avg_spice_level
+    FROM ratings r
+    INNER JOIN restaurants rest ON LOWER(r.restaurant) = LOWER(rest.name)
+    GROUP BY rest.name
     ORDER BY avg_overall DESC
     ${limit ? 'LIMIT ?' : ''}
   `;
