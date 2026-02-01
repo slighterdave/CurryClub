@@ -1,0 +1,88 @@
+╔═══════════════════════════════════════════════════════════════════╗
+║                                                                   ║
+║          INSTRUCTIONS FOR SERVER 13.49.111.162                    ║
+║                                                                   ║
+╚═══════════════════════════════════════════════════════════════════╝
+
+Copy and paste these commands on your Ubuntu server:
+
+┌───────────────────────────────────────────────────────────────────┐
+│ STEP 1: Connect to Server                                         │
+└───────────────────────────────────────────────────────────────────┘
+
+ssh -i /path/to/your-key.pem ubuntu@13.49.111.162
+
+
+┌───────────────────────────────────────────────────────────────────┐
+│ STEP 2: Run Cleanup (Copy all lines below at once)                │
+└───────────────────────────────────────────────────────────────────┘
+
+cd /home/ubuntu/CurryClub
+git pull origin main
+chmod +x cleanup-server.sh
+./cleanup-server.sh
+
+
+That's it! The script will:
+✓ Remove all outdated files
+✓ Install fresh dependencies
+✓ Build the application
+✓ Restart the server
+
+
+┌───────────────────────────────────────────────────────────────────┐
+│ STEP 3: Verify (Optional but Recommended)                         │
+└───────────────────────────────────────────────────────────────────┘
+
+./verify-deployment.sh
+pm2 status
+
+
+┌───────────────────────────────────────────────────────────────────┐
+│ STEP 4: Test in Browser                                           │
+└───────────────────────────────────────────────────────────────────┘
+
+1. Open: http://13.49.111.162:3000
+2. Clear browser cache: Ctrl+Shift+Delete (or Cmd+Shift+Delete on Mac)
+   OR do a hard refresh: Ctrl+Shift+R (or Cmd+Shift+R on Mac)
+3. Test navigation and all features
+
+
+═══════════════════════════════════════════════════════════════════
+
+WHAT GOT CLEANED UP:
+
+Repository (GitHub):
+  ✗ Removed: PM2_ERROR_FIX.md (redundant)
+  ✗ Removed: SOLUTION_SUMMARY.md (outdated)
+  ✗ Removed: TROUBLESHOOTING.md (consolidated)
+  ✓ Added: SERVER_CLEANUP.md (comprehensive guide)
+  ✓ Added: QUICK_START.md (quick reference)
+  ✓ Added: cleanup-server.sh (automation script)
+
+Server (Will be cleaned on next pull):
+  ✗ Old dist/ directory → Fresh build
+  ✗ Old Assets/ directory → Removed
+  ✗ Old node_modules/ → Fresh install
+  ✗ Outdated .md files → Removed
+  ✓ Clean codebase matching repository
+
+═══════════════════════════════════════════════════════════════════
+
+FUTURE DEPLOYMENTS:
+
+For regular updates after this cleanup, just use:
+
+cd /home/ubuntu/CurryClub
+./deploy.sh
+
+═══════════════════════════════════════════════════════════════════
+
+NEED MORE HELP?
+
+• Quick commands: See QUICK_START.md
+• Detailed guide: See SERVER_CLEANUP.md  
+• Deployment: See DEPLOYMENT.md
+• Development: See README.md
+
+═══════════════════════════════════════════════════════════════════
