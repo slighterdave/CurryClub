@@ -114,8 +114,16 @@ const insertStmt = db.prepare(`
   VALUES (@restaurant, @food, @service, @choice, @value, @spiceLevel, @overall, @notes)
 `);
 
+// Middleware to prevent caching of API responses
+function noCacheMiddleware(req, res, next) {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+}
+
 // GET /api/restaurants
-app.get('/api/restaurants', (req, res) => {
+app.get('/api/restaurants', noCacheMiddleware, (req, res) => {
   const rows = selectRestaurantsStmt.all();
   res.json({ restaurants: rows });
 });
@@ -219,13 +227,13 @@ app.post('/api/ratings', (req, res) => {
 });
 
 // GET /api/ratings
-app.get('/api/ratings', (req, res) => {
+app.get('/api/ratings', noCacheMiddleware, (req, res) => {
   const rows = db.prepare('SELECT * FROM ratings ORDER BY created_at DESC').all();
   res.json({ ratings: rows });
 });
 
 // GET /api/ratings/aggregate - Get aggregate ratings by restaurant
-app.get('/api/ratings/aggregate', (req, res) => {
+app.get('/api/ratings/aggregate', noCacheMiddleware, (req, res) => {
   const limit = req.query.limit ? parseInt(req.query.limit, 10) : undefined;
   
   const query = `
