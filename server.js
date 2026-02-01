@@ -116,6 +116,11 @@ const insertStmt = db.prepare(`
 
 // GET /api/restaurants
 app.get('/api/restaurants', (req, res) => {
+  // Set cache control headers to prevent stale data
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  
   const rows = selectRestaurantsStmt.all();
   res.json({ restaurants: rows });
 });
@@ -220,6 +225,11 @@ app.post('/api/ratings', (req, res) => {
 
 // GET /api/ratings
 app.get('/api/ratings', (req, res) => {
+  // Set cache control headers to prevent stale data
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  
   const rows = db.prepare('SELECT * FROM ratings ORDER BY created_at DESC').all();
   res.json({ ratings: rows });
 });

@@ -26,14 +26,34 @@ export function RatingForm() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetch('/api/restaurants')
-      .then(r => r.json())
-      .then(data => {
-        const list = (data?.restaurants || []).map((r: any) => r.name);
-        setRestaurants(list);
-      })
-      .catch(err => console.error('fetch restaurants', err));
+    fetchRestaurants();
+
+    // Refresh restaurant list when page becomes visible
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('Page became visible, refreshing restaurants');
+        fetchRestaurants();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
+
+  async function fetchRestaurants() {
+    try {
+      // Add cache-busting parameter to ensure fresh data
+      const response = await fetch(`/api/restaurants?t=${Date.now()}`);
+      const data = await response.json();
+      const list = (data?.restaurants || []).map((r: any) => r.name);
+      setRestaurants(list);
+    } catch (err) {
+      console.error('fetch restaurants', err);
+    }
+  }
 
   async function handleAddRestaurant() {
     const name = newRestaurant.trim();
@@ -77,7 +97,8 @@ export function RatingForm() {
 
   async function refreshRestaurants(selectName?: string) {
     try {
-      const res = await fetch('/api/restaurants');
+      // Add cache-busting parameter to ensure fresh data
+      const res = await fetch(`/api/restaurants?t=${Date.now()}`);
       const data = await res.json();
       const list = (data?.restaurants || []).map((r: any) => r.name);
       setRestaurants(list);

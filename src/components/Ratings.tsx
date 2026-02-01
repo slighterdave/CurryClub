@@ -28,6 +28,20 @@ export function Ratings() {
   useEffect(() => {
     console.log('Ratings component mounted');
     fetchAggregates();
+
+    // Refresh data when page becomes visible
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('Page became visible, refreshing ratings');
+        fetchAggregates();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   async function fetchAggregates() {
