@@ -1,7 +1,6 @@
 #!/bin/bash
 
 # CurryClub Deployment Script for EC2 Ubuntu
-# This script automates the deployment process
 # Usage: ./deploy.sh
 
 set -e  # Exit on any error
@@ -40,6 +39,15 @@ fi
 echo ""
 echo "✅ Build complete!"
 echo ""
+
+# Sync `public/` directory into `dist/` for deployment
+if [ -d "public" ]; then
+    echo "📋 Copying public folder contents to dist..."
+    cp -r public/* dist/
+    echo "✅ Public folder copied!"
+else
+    echo "ℹ️ No public folder to copy."
+fi
 
 # Check if PM2 is installed
 if command -v pm2 &> /dev/null; then
