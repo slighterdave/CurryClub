@@ -80,7 +80,7 @@ function AppContent() {
               <Link 
                 to="/" 
                 onClick={() => setMenuOpen(false)}
-                className={`flex items-center gap-3 transition-colors py-2 ${
+                className={`w-full text-left flex items-center gap-3 transition-colors py-2 ${
                   location.pathname === '/' ? 'text-orange-600' : 'text-gray-700 hover:text-orange-600'
                 }`}
               >
@@ -92,7 +92,7 @@ function AppContent() {
               <Link 
                 to="/ratings" 
                 onClick={() => setMenuOpen(false)}
-                className={`flex items-center gap-3 transition-colors py-2 ${
+                className={`w-full text-left flex items-center gap-3 transition-colors py-2 ${
                   location.pathname === '/ratings' ? 'text-orange-600' : 'text-gray-700 hover:text-orange-600'
                 }`}
               >
@@ -101,10 +101,15 @@ function AppContent() {
               </Link>
             </li>
             <li>
-              <a href="#" className="flex items-center gap-3 text-gray-700 hover:text-orange-600 transition-colors py-2">
+              {/* Using button instead of anchor to avoid href="#" hash navigation */}
+              <button
+                type="button"
+                onClick={() => setMenuOpen(false)}
+                className="w-full text-left flex items-center gap-3 text-gray-700 hover:text-orange-600 transition-colors py-2"
+              >
                 <InfoIcon />
                 <span>About</span>
-              </a>
+              </button>
             </li>
           </ul>
         </nav>
