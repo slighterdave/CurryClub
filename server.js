@@ -65,6 +65,31 @@ const selectRestaurantsStmt = db.prepare(`
 const findRestaurantByNameStmt = db.prepare(`
   SELECT id, name FROM restaurants WHERE name = ?
 `);
+const findRestaurantByNameCaseInsensitiveStmt = db.prepare(`
+  SELECT id, name FROM restaurants WHERE LOWER(name) = LOWER(?)
+`);
+
+// Helper function to sanitize input - prevent injection attacks
+function sanitizeInput(input) {
+  if (!input || typeof input !== 'string') return '';
+  // Remove any null bytes, control characters, and trim
+  return input
+    .replace(/\0/g, '') // Remove null bytes
+    .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
+    .trim();
+}
+
+// Helper function to capitalize first letter of each word
+function capitalizeWords(str) {
+  if (!str) return '';
+  return str
+    .split(' ')
+    .map(word => {
+      if (!word) return '';
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(' ');
+}
 // --- end restaurants support ---
 
 // Ensure ratings table exists
@@ -97,18 +122,38 @@ app.get('/api/restaurants', (req, res) => {
 
 // POST /api/restaurants
 app.post('/api/restaurants', (req, res) => {
-  const name = (req.body && req.body.name) ? String(req.body.name).trim() : '';
-  if (!name) return res.status(400).json({ error: 'name_required' });
+  const rawName = (req.body && req.body.name) ? String(req.body.name) : '';
+  
+  // Sanitize input first
+  const sanitizedName = sanitizeInput(rawName);
+  if (!sanitizedName) return res.status(400).json({ error: 'name_required' });
+  
+  // Capitalize the restaurant name
+  const capitalizedName = capitalizeWords(sanitizedName);
+  
+  // Check if restaurant already exists (case-insensitive)
+  const existing = findRestaurantByNameCaseInsensitiveStmt.get(capitalizedName);
+  if (existing) {
+    return res.status(409).json({ 
+      error: 'restaurant_exists',
+      message: 'A restaurant with this name already exists',
+      restaurant: existing 
+    });
+  }
 
   try {
-    const info = insertRestaurantStmt.run(name);
+    const info = insertRestaurantStmt.run(capitalizedName);
     const created = db.prepare('SELECT id, name, created_at FROM restaurants WHERE id = ?').get(info.lastInsertRowid);
     res.status(201).json({ restaurant: created });
   } catch (err) {
     if (err && err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-      // already exists
-      const existing = findRestaurantByNameStmt.get(name);
-      return res.status(200).json({ restaurant: existing, notice: 'already_exists' });
+      // Race condition: another request just inserted it
+      const existing = findRestaurantByNameStmt.get(capitalizedName);
+      return res.status(409).json({ 
+        error: 'restaurant_exists',
+        message: 'A restaurant with this name already exists',
+        restaurant: existing 
+      });
     }
     console.error(err);
     res.status(500).json({ error: 'internal_error' });
@@ -126,6 +171,13 @@ app.post('/api/ratings', (req, res) => {
   if (typeof body.restaurant !== 'string' || !body.restaurant.trim()) {
     return res.status(400).json({ error: 'invalid_restaurant' });
   }
+  
+  // Sanitize the restaurant name
+  const sanitizedRestaurant = sanitizeInput(body.restaurant);
+  if (!sanitizedRestaurant) {
+    return res.status(400).json({ error: 'invalid_restaurant' });
+  }
+  
   if (!body.ratings || typeof body.ratings !== 'object') {
     return res.status(400).json({ error: 'invalid_ratings' });
   }
@@ -141,23 +193,25 @@ app.post('/api/ratings', (req, res) => {
   // Calculate overall
   const overall = (ratings.food + ratings.service + ratings.choice + ratings.value + ratings.spiceLevel) / 5;
 
-  // Validate restaurant exists
-  const { restaurant, notes } = body;
-  const rest = findRestaurantByNameStmt.get(restaurant);
+  // Validate restaurant exists (use sanitized name)
+  const rest = findRestaurantByNameStmt.get(sanitizedRestaurant);
   if (!rest) {
     return res.status(400).json({ error: 'restaurant_not_found', message: 'Restaurant must be added to list before rating.' });
   }
 
-  // proceed to insert (unchanged)
+  // Sanitize notes as well
+  const sanitizedNotes = body.notes ? sanitizeInput(body.notes) : null;
+
+  // proceed to insert (use sanitized values)
   const info = insertStmt.run({
-    restaurant, // keep storing the string for now
+    restaurant: sanitizedRestaurant,
     food: ratings.food,
     service: ratings.service,
     choice: ratings.choice,
     value: ratings.value,
     spiceLevel: ratings.spiceLevel,
     overall: Number(overall.toFixed(2)),
-    notes: notes || null
+    notes: sanitizedNotes
   });
 
   const inserted = db.prepare('SELECT * FROM ratings WHERE id = ?').get(info.lastInsertRowid);

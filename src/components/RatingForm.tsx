@@ -46,6 +46,22 @@ export function RatingForm() {
         body: JSON.stringify({ name }),
       });
       const data = await res.json();
+      
+      if (res.status === 409) {
+        // Restaurant already exists
+        alert(`Restaurant "${data.restaurant?.name || name}" already exists!`);
+        // Refresh list and select the existing restaurant
+        await refreshRestaurants(data.restaurant?.name);
+        setNewRestaurant('');
+        setShowAddForm(false);
+        return;
+      }
+      
+      if (!res.ok) {
+        alert(`Failed to add restaurant: ${data.error || 'Unknown error'}`);
+        return;
+      }
+      
       const addedName = data?.restaurant?.name || name;
       // refresh list & select
       await refreshRestaurants(addedName);
