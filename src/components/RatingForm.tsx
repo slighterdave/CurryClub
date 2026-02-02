@@ -151,7 +151,7 @@ export function RatingForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <label htmlFor="restaurant-select" className="block text-sm font-medium text-gray-700 mb-2">
+        <label htmlFor="restaurant-select" className="block text-sm font-medium text-indian-spice mb-2 font-heading">
           Restaurant Name
         </label>
         <div className="space-y-2">
@@ -159,7 +159,7 @@ export function RatingForm() {
             id="restaurant-select"
             value={restaurant}
             onChange={e => setRestaurant(e.target.value)}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
+            className="w-full px-4 py-3 border-2 border-indian-gold rounded-lg focus:ring-2 focus:ring-indian-saffron focus:border-indian-saffron outline-none transition-all bg-white shadow-sm"
             required
           >
             <option value="">Select a restaurant...</option>
@@ -170,18 +170,18 @@ export function RatingForm() {
             <button
               type="button"
               onClick={() => setShowAddForm(true)}
-              className="text-sm text-orange-600 hover:text-orange-700 font-medium"
+              className="text-sm text-indian-saffron hover:text-indian-curry font-medium font-heading transition-colors"
             >
               + Add new restaurant
             </button>
           ) : (
-            <div className="space-y-2 p-3 bg-gray-50 rounded-lg">
+            <div className="space-y-2 p-3 bg-indian-cream bg-opacity-50 rounded-lg border-2 border-indian-gold">
               <input
                 type="text"
                 value={newRestaurant}
                 onChange={e => setNewRestaurant(e.target.value)}
                 placeholder="Restaurant name"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none"
+                className="w-full px-3 py-2 border-2 border-indian-gold rounded-lg focus:ring-2 focus:ring-indian-saffron focus:border-indian-saffron outline-none"
               />
               <div className="flex gap-3 justify-center">
                 <button
@@ -189,7 +189,7 @@ export function RatingForm() {
                   onClick={handleAddRestaurant}
                   disabled={adding}
                   aria-label="Add restaurant"
-                  className="p-2 rounded-full bg-orange-600 text-white hover:bg-orange-700 disabled:bg-gray-400 transition-all active:scale-95"
+                  className="p-2 rounded-full bg-gradient-to-r from-indian-saffron to-indian-curry text-white hover:shadow-lg disabled:bg-gray-400 transition-all active:scale-95"
                 >
                   <svg
                     width="24"
@@ -212,7 +212,7 @@ export function RatingForm() {
                     setNewRestaurant('');
                   }}
                   aria-label="Cancel"
-                  className="p-2 rounded-full bg-orange-600 text-white hover:bg-orange-700 transition-all active:scale-95"
+                  className="p-2 rounded-full bg-gradient-to-r from-indian-saffron to-indian-curry text-white hover:shadow-lg transition-all active:scale-95"
                 >
                   <svg
                     width="24"
@@ -238,7 +238,7 @@ export function RatingForm() {
       <div className="space-y-5">
         {ratingCategories.map(category => (
           <div key={category.key} className="space-y-2">
-            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+            <label className="flex items-center gap-2 text-sm font-medium text-indian-spice font-heading">
               {category.label}
             </label>
             <div className="flex gap-2">
@@ -255,7 +255,7 @@ export function RatingForm() {
                     viewBox="0 0 24 24"
                     fill="none"
                     xmlns="http://www.w3.org/2000/svg"
-                    className={`${ratings[category.key] >= value ? 'fill-orange-500 text-orange-500' : 'text-gray-300'} transition-colors`}
+                    className={`${ratings[category.key] >= value ? 'fill-indian-saffron text-indian-saffron' : 'text-gray-300'} transition-colors drop-shadow-sm`}
                   >
                     <path
                       d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
@@ -264,7 +264,7 @@ export function RatingForm() {
                   </svg>
                 </button>
               ))}
-              <span className="ml-2 text-gray-600 self-center">
+              <span className="ml-2 text-indian-rust self-center font-body">
                 {ratings[category.key] > 0 ? `${ratings[category.key]}/5` : '-'}
               </span>
             </div>
@@ -274,27 +274,27 @@ export function RatingForm() {
 
       {/* Notes Section */}
       <div className="space-y-2">
-        <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
-          Notes <span className="text-gray-500 font-normal">(optional)</span>
+        <label htmlFor="notes" className="block text-sm font-medium text-indian-spice font-heading">
+          Notes <span className="text-indian-rust font-normal">(optional)</span>
         </label>
         <textarea
           id="notes"
           value={notes}
           onChange={e => setNotes(e.target.value)}
           placeholder="Add any additional comments about your experience..."
-          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all resize-vertical min-h-[100px]"
+          className="w-full px-4 py-3 border-2 border-indian-gold rounded-lg focus:ring-2 focus:ring-indian-saffron focus:border-indian-saffron outline-none transition-all resize-vertical min-h-[100px] bg-white shadow-sm"
           maxLength={NOTES_MAX_LENGTH}
         />
         <div className="flex justify-end">
-          <span className={`text-sm ${notes.length > NOTES_WARNING_THRESHOLD ? 'text-orange-600 font-medium' : 'text-gray-500'}`}>
+          <span className={`text-sm font-body ${notes.length > NOTES_WARNING_THRESHOLD ? 'text-indian-saffron font-medium' : 'text-indian-rust'}`}>
             {notes.length}/{NOTES_MAX_LENGTH} characters
           </span>
         </div>
       </div>
 
-      <div className="pt-4 border-t border-gray-200">
+      <div className="pt-4 border-t-2 border-indian-gold">
         <div className="flex items-center justify-between mb-4">
-          <span className="text-lg font-semibold text-gray-700">Overall Rating</span>
+          <span className="text-lg font-semibold text-indian-spice font-heading">Overall Rating</span>
           <div className="flex items-center gap-2">
             <svg
               width="24"
@@ -302,14 +302,14 @@ export function RatingForm() {
               viewBox="0 0 24 24"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
-              className="fill-orange-500 text-orange-500"
+              className="fill-indian-saffron text-indian-saffron"
             >
               <path
                 d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
                 fill="currentColor"
               />
             </svg>
-            <span className="text-2xl font-bold text-orange-600">
+            <span className="text-2xl font-bold text-indian-saffron font-heading">
               {Object.values(ratings).every(v => v > 0) ? overallRating : '-'}
             </span>
           </div>
@@ -317,9 +317,9 @@ export function RatingForm() {
         <button
           type="submit"
           disabled={!isValid}
-          className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition-all ${
+          className={`w-full py-3 px-6 rounded-lg font-semibold text-white transition-all font-heading shadow-lg ${
             isValid
-              ? 'bg-orange-600 hover:bg-orange-700 active:scale-95'
+              ? 'bg-gradient-to-r from-indian-saffron to-indian-curry hover:shadow-xl hover:scale-105 active:scale-95'
               : 'bg-gray-300 cursor-not-allowed'
           }`}
         >

@@ -54,14 +54,14 @@ function AppContent() {
   const location = useLocation();
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-gradient-to-br from-indian-cream via-orange-50 to-indian-cream">
       {/* Header */}
-      <header className="bg-white text-gray-800 shadow-md relative z-50 border-b border-gray-200">
+      <header className="bg-gradient-to-r from-indian-saffron via-indian-curry to-indian-saffron text-white shadow-lg relative z-50 border-b-4 border-indian-gold">
         <div className="container mx-auto px-4 py-4 flex items-center justify-center relative">
-          <img src="/logo.png" alt="The Curry Club" className="h-16" />
+          <img src="/logo.png" alt="The Curry Club" className="h-16 drop-shadow-lg" />
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors absolute right-4"
+            className="p-2 hover:bg-white hover:bg-opacity-20 rounded-lg transition-all duration-300 absolute right-4 backdrop-blur-sm"
             aria-label="Toggle menu"
           >
             {menuOpen ? <XIcon /> : <MenuIcon />}
@@ -71,7 +71,7 @@ function AppContent() {
 
       {/* Side Menu */}
       <div
-        className={`fixed top-[72px] right-0 h-[calc(100vh-72px)] bg-white shadow-2xl z-40 transition-transform duration-300 ease-in-out border-l border-gray-200 ${
+        className={`fixed top-[72px] right-0 h-[calc(100vh-72px)] bg-gradient-to-b from-indian-cream to-orange-50 shadow-2xl z-40 transition-transform duration-300 ease-in-out border-l-4 border-indian-gold ${
           menuOpen ? 'translate-x-0' : 'translate-x-full'
         } w-64`}
       >
@@ -81,8 +81,10 @@ function AppContent() {
               <Link 
                 to="/" 
                 onClick={() => setMenuOpen(false)}
-                className={`w-full text-left flex items-center gap-3 transition-colors py-2 ${
-                  location.pathname === '/' ? 'text-orange-600' : 'text-gray-700 hover:text-orange-600'
+                className={`w-full text-left flex items-center gap-3 transition-all duration-300 py-3 px-4 rounded-lg font-heading ${
+                  location.pathname === '/' 
+                    ? 'bg-indian-saffron text-white shadow-md' 
+                    : 'text-indian-spice hover:bg-indian-gold hover:bg-opacity-30 hover:translate-x-1'
                 }`}
               >
                 <HomeIcon />
@@ -93,8 +95,10 @@ function AppContent() {
               <Link 
                 to="/ratings" 
                 onClick={() => setMenuOpen(false)}
-                className={`w-full text-left flex items-center gap-3 transition-colors py-2 ${
-                  location.pathname === '/ratings' ? 'text-orange-600' : 'text-gray-700 hover:text-orange-600'
+                className={`w-full text-left flex items-center gap-3 transition-all duration-300 py-3 px-4 rounded-lg font-heading ${
+                  location.pathname === '/ratings' 
+                    ? 'bg-indian-saffron text-white shadow-md' 
+                    : 'text-indian-spice hover:bg-indian-gold hover:bg-opacity-30 hover:translate-x-1'
                 }`}
               >
                 <StarIcon />
@@ -105,8 +109,10 @@ function AppContent() {
               <Link 
                 to="/about" 
                 onClick={() => setMenuOpen(false)}
-                className={`w-full text-left flex items-center gap-3 transition-colors py-2 ${
-                  location.pathname === '/about' ? 'text-orange-600' : 'text-gray-700 hover:text-orange-600'
+                className={`w-full text-left flex items-center gap-3 transition-all duration-300 py-3 px-4 rounded-lg font-heading ${
+                  location.pathname === '/about' 
+                    ? 'bg-indian-saffron text-white shadow-md' 
+                    : 'text-indian-spice hover:bg-indian-gold hover:bg-opacity-30 hover:translate-x-1'
                 }`}
               >
                 <InfoIcon />
@@ -126,14 +132,20 @@ function AppContent() {
       )}
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8 flex items-center justify-center min-h-[calc(100vh-80px)]">
-        <div className="bg-white rounded-2xl shadow-lg p-8 max-w-2xl w-full border border-gray-200">
+      <main className="container mx-auto px-4 py-8 flex items-center justify-center min-h-[calc(100vh-80px)] relative z-10">
+        <div className="bg-white bg-opacity-95 backdrop-blur-sm rounded-2xl shadow-2xl p-8 max-w-2xl w-full border-4 border-indian-gold relative overflow-hidden">
+          {/* Decorative corner elements */}
+          <div className="absolute top-0 left-0 w-20 h-20 border-t-4 border-l-4 border-indian-curry opacity-30 rounded-tl-2xl"></div>
+          <div className="absolute top-0 right-0 w-20 h-20 border-t-4 border-r-4 border-indian-curry opacity-30 rounded-tr-2xl"></div>
+          <div className="absolute bottom-0 left-0 w-20 h-20 border-b-4 border-l-4 border-indian-curry opacity-30 rounded-bl-2xl"></div>
+          <div className="absolute bottom-0 right-0 w-20 h-20 border-b-4 border-r-4 border-indian-curry opacity-30 rounded-br-2xl"></div>
+          
           <Routes>
             <Route path="/" element={
               <>
                 <div className="text-center mb-8">
-                  <h2 className="text-3xl font-bold text-gray-800 mb-2">Rate a Curry House</h2>
-                  <p className="text-gray-600">Currys With The Lads</p>
+                  <h2 className="text-3xl font-bold text-indian-spice mb-2 font-heading">Rate a Curry House</h2>
+                  <p className="text-indian-rust font-body">Currys With The Lads</p>
                 </div>
                 <RatingForm />
               </>
