@@ -114,9 +114,21 @@ fi
 
 echo ""
 echo "📥 Pulling latest code from GitHub..."
-git fetch origin
-git checkout main || echo "   ⚠️  Warning: Could not checkout main branch"
-git pull origin main
+# Set up a git wrapper that handles running as root (e.g. via sudo).
+# git 2.35.2+ blocks operations in directories owned by another user, so when
+# the script is invoked with sudo we run git as the original user.  When run
+# directly as root we register the directory as safe instead.
+if [ "$EUID" -eq 0 ] && [ -n "${SUDO_USER:-}" ]; then
+    git_cmd() { sudo -u "$SUDO_USER" git "$@"; }
+else
+    if [ "$EUID" -eq 0 ]; then
+        git config --global --add safe.directory "$PWD"
+    fi
+    git_cmd() { git "$@"; }
+fi
+git_cmd fetch origin
+git_cmd checkout main || echo "   ⚠️  Warning: Could not checkout main branch"
+git_cmd pull origin main
 
 echo ""
 echo "📦 Installing dependencies..."
