@@ -17,6 +17,15 @@ fi
 
 # Pull latest changes
 echo "📥 Pulling latest changes from GitHub..."
+
+# Ensure we use HTTPS (not SSH) so the ubuntu user doesn't need GitHub SSH keys
+CURRENT_REMOTE_URL=$(git remote get-url origin 2>/dev/null || echo "")
+if [[ "$CURRENT_REMOTE_URL" == git@github.com:* ]]; then
+    HTTPS_URL=$(echo "$CURRENT_REMOTE_URL" | sed 's|git@github.com:|https://github.com/|')
+    echo "   Switching remote URL from SSH to HTTPS..."
+    git remote set-url origin "$HTTPS_URL" || { echo "❌ Failed to update remote URL. Please run: git remote set-url origin $HTTPS_URL"; exit 1; }
+fi
+
 git fetch origin
 git pull origin main
 
