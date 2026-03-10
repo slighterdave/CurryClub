@@ -104,14 +104,21 @@ db.prepare(`
     spiceLevel INTEGER NOT NULL,
     overall REAL NOT NULL,
     notes TEXT,
+    date_visited TEXT,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )
 `).run();
 
+// Migration: add date_visited column if it doesn't exist (for existing databases)
+const ratingsColumns = db.prepare('PRAGMA table_info(ratings)').all();
+if (!ratingsColumns.find(col => col.name === 'date_visited')) {
+  db.prepare('ALTER TABLE ratings ADD COLUMN date_visited TEXT').run();
+}
+
 // Prepared statement for ratings
 const insertStmt = db.prepare(`
-  INSERT INTO ratings (restaurant, food, service, choice, value, spiceLevel, overall, notes)
-  VALUES (@restaurant, @food, @service, @choice, @value, @spiceLevel, @overall, @notes)
+  INSERT INTO ratings (restaurant, food, service, choice, value, spiceLevel, overall, notes, date_visited)
+  VALUES (@restaurant, @food, @service, @choice, @value, @spiceLevel, @overall, @notes, @date_visited)
 `);
 
 // Middleware to prevent caching of API responses
@@ -215,6 +222,20 @@ app.post('/api/ratings', (req, res) => {
     return res.status(400).json({ error: 'notes_too_long', message: 'Notes must be 255 characters or less.' });
   }
 
+  // Validate date_visited (must be a valid YYYY-MM-DD date if provided)
+  let dateVisited = null;
+  if (body.dateVisited) {
+    const dateStr = sanitizeInput(String(body.dateVisited));
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dateStr) || isNaN(Date.parse(dateStr))) {
+      return res.status(400).json({ error: 'invalid_date_visited', message: 'Date Visited must be a valid date in YYYY-MM-DD format.' });
+    }
+    const today = new Date().toISOString().split('T')[0];
+    if (dateStr > today) {
+      return res.status(400).json({ error: 'invalid_date_visited', message: 'Date Visited cannot be in the future.' });
+    }
+    dateVisited = dateStr;
+  }
+
   // proceed to insert (use sanitized values)
   const info = insertStmt.run({
     restaurant: sanitizedRestaurant,
@@ -224,7 +245,8 @@ app.post('/api/ratings', (req, res) => {
     value: ratings.value,
     spiceLevel: ratings.spiceLevel,
     overall: Number(overall.toFixed(2)),
-    notes: sanitizedNotes
+    notes: sanitizedNotes,
+    date_visited: dateVisited
   });
 
   const inserted = db.prepare('SELECT * FROM ratings WHERE id = ?').get(info.lastInsertRowid);

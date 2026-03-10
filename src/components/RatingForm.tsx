@@ -11,6 +11,10 @@ type Ratings = {
 const NOTES_MAX_LENGTH = 255;
 const NOTES_WARNING_THRESHOLD = 240;
 
+function todayDateString() {
+  return new Date().toISOString().split('T')[0];
+}
+
 export function RatingForm() {
   const [restaurant, setRestaurant] = useState('');
   const [restaurants, setRestaurants] = useState<string[]>([]);
@@ -27,6 +31,7 @@ export function RatingForm() {
   });
 
   const [notes, setNotes] = useState('');
+  const [dateVisited, setDateVisited] = useState(todayDateString);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -112,6 +117,7 @@ export function RatingForm() {
       restaurant,
       ratings,
       notes: notes.trim(),
+      dateVisited,
     };
     try {
       const res = await fetch('/api/ratings', {
@@ -128,6 +134,7 @@ export function RatingForm() {
       setRatings({ food:0, service:0, choice:0, value:0, spiceLevel:0 });
       setRestaurant('');
       setNotes('');
+      setDateVisited(todayDateString());
       alert('Rating submitted successfully!');
     } catch (err) {
       console.error(err);
@@ -233,6 +240,21 @@ export function RatingForm() {
             </div>
           )}
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="date-visited" className="block text-sm font-medium text-gray-700 mb-2">
+          Date Visited
+        </label>
+        <input
+          id="date-visited"
+          type="date"
+          value={dateVisited}
+          onChange={e => setDateVisited(e.target.value)}
+          max={todayDateString()}
+          required
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all"
+        />
       </div>
 
       <div className="space-y-5">
