@@ -2,8 +2,10 @@ import express from 'express';
 import Database from 'better-sqlite3';
 import { fileURLToPath } from 'url';
 import { dirname, join, basename } from 'path';
-import { existsSync, mkdirSync } from 'fs';
+import { existsSync, mkdirSync, unlinkSync } from 'fs';
+import { randomBytes } from 'crypto';
 import multer from 'multer';
+import rateLimit from 'express-rate-limit';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -157,6 +159,28 @@ const insertStmt = db.prepare(`
   INSERT INTO ratings (restaurant, food, service, choice, value, spiceLevel, overall, notes, date_visited, photo_path)
   VALUES (@restaurant, @food, @service, @choice, @value, @spiceLevel, @overall, @notes, @date_visited, @photo_path)
 `);
+
+// Admin authentication
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+if (!ADMIN_PASSWORD) {
+  console.warn('⚠️  WARNING: ADMIN_PASSWORD environment variable is not set. Admin portal is disabled.');
+}
+
+// In-memory session tokens (cleared on server restart)
+const adminSessions = new Set();
+
+function adminAuth(req, res, next) {
+  const auth = req.headers['authorization'];
+  const token = auth && auth.startsWith('Bearer ') ? auth.slice(7) : null;
+  if (!token || !adminSessions.has(token)) {
+    return res.status(401).json({ error: 'unauthorized' });
+  }
+  next();
+}
+
+// Rate limiters for admin endpoints
+const adminLoginRateLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false });
+const adminActionRateLimit = rateLimit({ windowMs: 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false });
 
 // Middleware to prevent caching of API responses
 function noCacheMiddleware(req, res, next) {
@@ -379,6 +403,116 @@ app.get('/api/ratings/aggregate', noCacheMiddleware, (req, res) => {
   
   res.json({ aggregates });
 });
+
+// --- Admin endpoints ---
+
+// POST /api/admin/login
+app.post('/api/admin/login', adminLoginRateLimit, (req, res) => {
+  if (!ADMIN_PASSWORD) {
+    return res.status(503).json({ error: 'admin_disabled', message: 'Admin portal is not configured.' });
+  }
+  const password = req.body && req.body.password ? String(req.body.password) : '';
+  if (password === ADMIN_PASSWORD) {
+    const token = randomBytes(32).toString('hex');
+    adminSessions.add(token);
+    res.json({ success: true, token });
+  } else {
+    res.status(401).json({ error: 'invalid_password' });
+  }
+});
+
+// POST /api/admin/logout
+app.post('/api/admin/logout', adminAuth, (req, res) => {
+  const auth = req.headers['authorization'];
+  const token = auth && auth.startsWith('Bearer ') ? auth.slice(7) : null;
+  if (token) adminSessions.delete(token);
+  res.json({ success: true });
+});
+
+// GET /api/admin/restaurants
+app.get('/api/admin/restaurants', adminAuth, adminActionRateLimit, noCacheMiddleware, (req, res) => {
+  const rows = db.prepare(`
+    SELECT r.id, r.name, r.created_at, COUNT(rt.id) as rating_count
+    FROM restaurants r
+    LEFT JOIN ratings rt ON LOWER(rt.restaurant) = LOWER(r.name)
+    GROUP BY r.id
+    ORDER BY r.name COLLATE NOCASE
+  `).all();
+  res.json({ restaurants: rows });
+});
+
+// GET /api/admin/ratings
+app.get('/api/admin/ratings', adminAuth, adminActionRateLimit, noCacheMiddleware, (req, res) => {
+  const rows = db.prepare('SELECT * FROM ratings ORDER BY created_at DESC').all();
+  res.json({ ratings: rows });
+});
+
+// DELETE /api/admin/ratings/:id/photo - Remove photo from a rating
+app.delete('/api/admin/ratings/:id/photo', adminAuth, adminActionRateLimit, (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({ error: 'invalid_id' });
+  }
+  const rating = db.prepare('SELECT * FROM ratings WHERE id = ?').get(id);
+  if (!rating) {
+    return res.status(404).json({ error: 'not_found' });
+  }
+  if (!rating.photo_path) {
+    return res.status(404).json({ error: 'no_photo' });
+  }
+  const photoFile = join(__dirname, rating.photo_path);
+  if (existsSync(photoFile)) {
+    unlinkSync(photoFile);
+  }
+  db.prepare('UPDATE ratings SET photo_path = NULL WHERE id = ?').run(id);
+  res.json({ success: true });
+});
+
+// DELETE /api/admin/ratings/:id - Delete a rating (and its photo)
+app.delete('/api/admin/ratings/:id', adminAuth, adminActionRateLimit, (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({ error: 'invalid_id' });
+  }
+  const rating = db.prepare('SELECT * FROM ratings WHERE id = ?').get(id);
+  if (!rating) {
+    return res.status(404).json({ error: 'not_found' });
+  }
+  if (rating.photo_path) {
+    const photoFile = join(__dirname, rating.photo_path);
+    if (existsSync(photoFile)) {
+      unlinkSync(photoFile);
+    }
+  }
+  db.prepare('DELETE FROM ratings WHERE id = ?').run(id);
+  res.json({ success: true });
+});
+
+// DELETE /api/admin/restaurants/:id - Delete a restaurant and all its ratings (and photos)
+app.delete('/api/admin/restaurants/:id', adminAuth, adminActionRateLimit, (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({ error: 'invalid_id' });
+  }
+  const restaurant = db.prepare('SELECT * FROM restaurants WHERE id = ?').get(id);
+  if (!restaurant) {
+    return res.status(404).json({ error: 'not_found' });
+  }
+  const ratings = db.prepare('SELECT * FROM ratings WHERE LOWER(restaurant) = LOWER(?)').all(restaurant.name);
+  for (const rating of ratings) {
+    if (rating.photo_path) {
+      const photoFile = join(__dirname, rating.photo_path);
+      if (existsSync(photoFile)) {
+        unlinkSync(photoFile);
+      }
+    }
+  }
+  db.prepare('DELETE FROM ratings WHERE LOWER(restaurant) = LOWER(?)').run(restaurant.name);
+  db.prepare('DELETE FROM restaurants WHERE id = ?').run(id);
+  res.json({ success: true });
+});
+
+// --- end Admin endpoints ---
 
 // Health check
 app.get('/_health', (req, res) => {

@@ -4,6 +4,7 @@ import { RatingForm } from './components/RatingForm';
 import { Ratings } from './components/Ratings';
 import { About } from './components/About';
 import { Visits } from './components/Visits';
+import { Admin } from './components/Admin';
 
 // Simple icons as SVG components
 const MenuIcon = () => (
@@ -163,6 +164,7 @@ function AppContent() {
             <Route path="/ratings" element={<Ratings />} />
             <Route path="/about" element={<About />} />
             <Route path="/visits" element={<Visits />} />
+            <Route path="/admin" element={<Admin />} />
           </Routes>
         </div>
       </main>
