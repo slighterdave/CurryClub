@@ -2,7 +2,8 @@ import express from 'express';
 import Database from 'better-sqlite3';
 import { fileURLToPath } from 'url';
 import { dirname, join, basename } from 'path';
-import { existsSync } from 'fs';
+import { existsSync, mkdirSync } from 'fs';
+import multer from 'multer';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -19,6 +20,34 @@ if (!existsSync(distPath)) {
   console.error('   This will create the dist directory with the production build.');
   process.exit(1);
 }
+
+// Uploads directory setup
+const uploadsPath = join(__dirname, 'uploads');
+if (!existsSync(uploadsPath)) {
+  mkdirSync(uploadsPath, { recursive: true });
+}
+
+// Multer storage configuration
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, uploadsPath),
+  filename: (_req, file, cb) => {
+    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    const dotIndex = file.originalname.lastIndexOf('.');
+    const ext = dotIndex !== -1 ? file.originalname.slice(dotIndex + 1) : 'jpg';
+    cb(null, `${unique}.${ext}`);
+  }
+});
+
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB limit
+  fileFilter: (_req, file, cb) => {
+    if (!file.mimetype.startsWith('image/')) {
+      return cb(new Error('Only image files are allowed'));
+    }
+    cb(null, true);
+  }
+});
 
 // Middleware
 app.use(express.json());
@@ -41,6 +70,9 @@ app.use(express.static(join(__dirname, 'dist'), {
     }
   }
 }));
+
+// Serve uploaded photos
+app.use('/uploads', express.static(uploadsPath, { maxAge: '1y' }));
 
 // Database setup
 const db = new Database(DB_PATH);
@@ -115,10 +147,15 @@ if (!ratingsColumns.find(col => col.name === 'date_visited')) {
   db.prepare('ALTER TABLE ratings ADD COLUMN date_visited TEXT').run();
 }
 
+// Migration: add photo_path column if it doesn't exist
+if (!ratingsColumns.find(col => col.name === 'photo_path')) {
+  db.prepare('ALTER TABLE ratings ADD COLUMN photo_path TEXT').run();
+}
+
 // Prepared statement for ratings
 const insertStmt = db.prepare(`
-  INSERT INTO ratings (restaurant, food, service, choice, value, spiceLevel, overall, notes, date_visited)
-  VALUES (@restaurant, @food, @service, @choice, @value, @spiceLevel, @overall, @notes, @date_visited)
+  INSERT INTO ratings (restaurant, food, service, choice, value, spiceLevel, overall, notes, date_visited, photo_path)
+  VALUES (@restaurant, @food, @service, @choice, @value, @spiceLevel, @overall, @notes, @date_visited, @photo_path)
 `);
 
 // Middleware to prevent caching of API responses
@@ -176,8 +213,8 @@ app.post('/api/restaurants', (req, res) => {
 });
 
 // POST /api/ratings
-app.post('/api/ratings', (req, res) => {
-  const { body } = req;
+app.post('/api/ratings', upload.single('photo'), (req, res) => {
+  const body = req.body;
   if (!body) {
     return res.status(400).json({ error: 'invalid_request' });
   }
@@ -193,20 +230,29 @@ app.post('/api/ratings', (req, res) => {
     return res.status(400).json({ error: 'invalid_restaurant' });
   }
   
-  if (!body.ratings || typeof body.ratings !== 'object') {
+  // Parse ratings — may arrive as JSON string when sent via FormData
+  let ratingsObj;
+  try {
+    ratingsObj = typeof body.ratings === 'string' ? JSON.parse(body.ratings) : body.ratings;
+  } catch {
     return res.status(400).json({ error: 'invalid_ratings' });
   }
 
-  const { ratings } = body;
+  if (!ratingsObj || typeof ratingsObj !== 'object') {
+    return res.status(400).json({ error: 'invalid_ratings' });
+  }
+
   const required = ['food', 'service', 'choice', 'value', 'spiceLevel'];
   for (const key of required) {
-    if (typeof ratings[key] !== 'number' || ratings[key] < 1 || ratings[key] > 5) {
+    const v = Number(ratingsObj[key]);
+    if (!Number.isInteger(v) || v < 1 || v > 5) {
       return res.status(400).json({ error: `invalid_${key}` });
     }
+    ratingsObj[key] = v;
   }
 
   // Calculate overall
-  const overall = (ratings.food + ratings.service + ratings.choice + ratings.value + ratings.spiceLevel) / 5;
+  const overall = (ratingsObj.food + ratingsObj.service + ratingsObj.choice + ratingsObj.value + ratingsObj.spiceLevel) / 5;
 
   // Validate restaurant exists (use sanitized name)
   const rest = findRestaurantByNameStmt.get(sanitizedRestaurant);
@@ -236,17 +282,21 @@ app.post('/api/ratings', (req, res) => {
     dateVisited = dateStr;
   }
 
+  // Handle uploaded photo
+  const photoPath = req.file ? `/uploads/${req.file.filename}` : null;
+
   // proceed to insert (use sanitized values)
   const info = insertStmt.run({
     restaurant: sanitizedRestaurant,
-    food: ratings.food,
-    service: ratings.service,
-    choice: ratings.choice,
-    value: ratings.value,
-    spiceLevel: ratings.spiceLevel,
+    food: ratingsObj.food,
+    service: ratingsObj.service,
+    choice: ratingsObj.choice,
+    value: ratingsObj.value,
+    spiceLevel: ratingsObj.spiceLevel,
     overall: Number(overall.toFixed(2)),
     notes: sanitizedNotes,
-    date_visited: dateVisited
+    date_visited: dateVisited,
+    photo_path: photoPath
   });
 
   const inserted = db.prepare('SELECT * FROM ratings WHERE id = ?').get(info.lastInsertRowid);
@@ -333,6 +383,19 @@ app.get('/api/ratings/aggregate', noCacheMiddleware, (req, res) => {
 // Health check
 app.get('/_health', (req, res) => {
   res.json({ status: 'ok' });
+});
+
+// Multer error handling middleware
+// eslint-disable-next-line no-unused-vars
+app.use((err, req, res, _next) => {
+  if (err && err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(413).json({ error: 'file_too_large', message: 'File size exceeds the 10 MB limit.' });
+  }
+  if (err && err.message === 'Only image files are allowed') {
+    return res.status(400).json({ error: 'invalid_file_type', message: 'Only image files are allowed.' });
+  }
+  console.error(err);
+  res.status(500).json({ error: 'internal_error' });
 });
 
 // Serve index.html for all other routes (SPA)

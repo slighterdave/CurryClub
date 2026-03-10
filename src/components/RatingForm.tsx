@@ -32,7 +32,16 @@ export function RatingForm() {
 
   const [notes, setNotes] = useState('');
   const [dateVisited, setDateVisited] = useState(todayDateString);
+  const [photo, setPhoto] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // Revoke object URL on cleanup to avoid memory leaks
+  useEffect(() => {
+    return () => {
+      if (photoPreview) URL.revokeObjectURL(photoPreview);
+    };
+  }, [photoPreview]);
 
   useEffect(() => {
     fetchRestaurants();
@@ -113,17 +122,19 @@ export function RatingForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const payload = {
-      restaurant,
-      ratings,
-      notes: notes.trim(),
-      dateVisited,
-    };
+    setSubmitting(true);
     try {
+      const formData = new FormData();
+      formData.append('restaurant', restaurant);
+      formData.append('ratings', JSON.stringify(ratings));
+      formData.append('notes', notes.trim());
+      formData.append('dateVisited', dateVisited);
+      if (photo) {
+        formData.append('photo', photo);
+      }
       const res = await fetch('/api/ratings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: formData,
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ error: 'unknown' }));
@@ -135,6 +146,8 @@ export function RatingForm() {
       setRestaurant('');
       setNotes('');
       setDateVisited(todayDateString());
+      setPhoto(null);
+      setPhotoPreview(null);
       alert('Rating submitted successfully!');
     } catch (err) {
       console.error(err);
@@ -312,6 +325,54 @@ export function RatingForm() {
             {notes.length}/{NOTES_MAX_LENGTH} characters
           </span>
         </div>
+      </div>
+
+      {/* Photo Upload Section */}
+      <div className="space-y-2">
+        <label htmlFor="photo-upload" className="block text-sm font-medium text-gray-700">
+          Photo <span className="text-gray-500 font-normal">(optional)</span>
+        </label>
+        <input
+          id="photo-upload"
+          type="file"
+          accept="image/*"
+          aria-describedby="photo-upload-hint"
+          onChange={e => {
+            const file = e.target.files?.[0] ?? null;
+            setPhoto(file);
+            if (photoPreview) URL.revokeObjectURL(photoPreview);
+            if (file) {
+              setPhotoPreview(URL.createObjectURL(file));
+            } else {
+              setPhotoPreview(null);
+            }
+          }}
+          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all text-sm text-gray-700 file:mr-4 file:py-1 file:px-3 file:rounded file:border-0 file:text-sm file:font-medium file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+        />
+        <p id="photo-upload-hint" className="text-xs text-gray-500">
+          Accepted formats: JPEG, PNG, GIF, WebP, etc. Maximum size: 10 MB.
+        </p>
+        {photoPreview && (
+          <div className="mt-2 relative inline-block">
+            <img
+              src={photoPreview}
+              alt="Preview"
+              className="max-h-48 rounded-lg border border-gray-200 object-contain"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                setPhoto(null);
+                if (photoPreview) URL.revokeObjectURL(photoPreview);
+                setPhotoPreview(null);
+              }}
+              className="absolute -top-2 -right-2 bg-gray-700 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-gray-900"
+              aria-label="Remove photo"
+            >
+              ✕
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="pt-4 border-t border-gray-200">
