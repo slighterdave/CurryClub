@@ -10,6 +10,7 @@ type Rating = {
   spiceLevel: number;
   overall: number;
   notes: string | null;
+  photo_path: string | null;
   created_at: string;
 };
 
@@ -192,6 +193,18 @@ export function RatingsModal({ restaurantName, onClose }: RatingsModalProps) {
                     <div className="pt-3 border-t border-gray-200">
                       <div className="text-xs text-gray-600 mb-1 font-semibold">Notes</div>
                       <div className="text-sm text-gray-700">{rating.notes}</div>
+                    </div>
+                  )}
+
+                  {/* Photo section */}
+                  {rating.photo_path && rating.photo_path.startsWith('/uploads/') && (
+                    <div className="pt-3 border-t border-gray-200">
+                      <div className="text-xs text-gray-600 mb-2 font-semibold">Photo</div>
+                      <img
+                        src={rating.photo_path}
+                        alt="Rating photo"
+                        className="max-h-64 rounded-lg border border-gray-200 object-contain"
+                      />
                     </div>
                   )}
                 </div>

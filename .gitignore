@@ -10,6 +10,9 @@ Assets
 *.db-shm
 *.db-wal
 
+# Uploaded files
+uploads/
+
 # Environment variables
 .env
 .env.local
