@@ -52,13 +52,14 @@ export function Visits() {
     fetchRatings();
   }, []);
 
-  // Build a map of date_visited -> ratings[]
+  // Build a map of effective date -> ratings[]
+  // Use date_visited if set; fall back to created_at date for older reviews without one
   const dateMap: Record<string, Rating[]> = {};
   for (const rating of allRatings) {
-    if (rating.date_visited) {
-      if (!dateMap[rating.date_visited]) dateMap[rating.date_visited] = [];
-      dateMap[rating.date_visited].push(rating);
-    }
+    const effectiveDate = rating.date_visited ?? rating.created_at?.substring(0, 10);
+    if (!effectiveDate) continue;
+    if (!dateMap[effectiveDate]) dateMap[effectiveDate] = [];
+    dateMap[effectiveDate].push(rating);
   }
 
   const prevMonth = () => {
