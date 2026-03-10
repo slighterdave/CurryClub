@@ -276,6 +276,18 @@ app.get('/api/ratings/restaurant/:name', noCacheMiddleware, (req, res) => {
   res.json({ ratings: rows });
 });
 
+// GET /api/ratings/date/:date - Get all ratings for a specific date_visited
+app.get('/api/ratings/date/:date', noCacheMiddleware, (req, res) => {
+  const dateStr = sanitizeInput(String(req.params.date || ''));
+  if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr) || isNaN(Date.parse(dateStr))) {
+    return res.status(400).json({ error: 'invalid_date', message: 'Date must be in YYYY-MM-DD format.' });
+  }
+  const rows = db.prepare(`
+    SELECT * FROM ratings WHERE date_visited = ? ORDER BY created_at DESC
+  `).all(dateStr);
+  res.json({ ratings: rows });
+});
+
 // GET /api/ratings/aggregate - Get aggregate ratings by restaurant
 app.get('/api/ratings/aggregate', noCacheMiddleware, (req, res) => {
   const limit = req.query.limit ? parseInt(req.query.limit, 10) : undefined;
