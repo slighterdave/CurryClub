@@ -4,7 +4,7 @@ import Database from 'better-sqlite3';
 import { fileURLToPath } from 'url';
 import { dirname, join, basename } from 'path';
 import { existsSync, mkdirSync, unlinkSync } from 'fs';
-import { randomBytes } from 'crypto';
+import { randomBytes, createHash, timingSafeEqual } from 'crypto';
 import multer from 'multer';
 import rateLimit from 'express-rate-limit';
 
@@ -413,7 +413,9 @@ app.post('/api/admin/login', adminLoginRateLimit, (req, res) => {
     return res.status(503).json({ error: 'admin_disabled', message: 'Admin portal is not configured.' });
   }
   const password = req.body && req.body.password ? String(req.body.password) : '';
-  if (password === ADMIN_PASSWORD) {
+  const passwordHash = createHash('sha256').update(password).digest();
+  const adminHash = createHash('sha256').update(ADMIN_PASSWORD).digest();
+  if (timingSafeEqual(passwordHash, adminHash)) {
     const token = randomBytes(32).toString('hex');
     adminSessions.add(token);
     res.json({ success: true, token });
