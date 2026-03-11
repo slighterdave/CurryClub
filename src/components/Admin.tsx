@@ -97,7 +97,12 @@ export function Admin() {
         localStorage.setItem(ADMIN_TOKEN_KEY, data.token);
         setToken(data.token);
       } else {
-        setLoginError('Invalid password');
+        const data = await res.json().catch(() => ({}));
+        if (data.error === 'admin_disabled') {
+          setLoginError('Admin portal is not configured. Please set the ADMIN_PASSWORD environment variable.');
+        } else {
+          setLoginError('Invalid password');
+        }
       }
     } catch {
       setLoginError('Connection error. Please try again.');
