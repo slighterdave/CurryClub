@@ -53,6 +53,20 @@ export function Admin() {
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
 
+  // Setup state
+  const [isConfigured, setIsConfigured] = useState<boolean | null>(null);
+  const [statusError, setStatusError] = useState(false);
+  const [setupPassword, setSetupPassword] = useState('');
+  const [setupConfirm, setSetupConfirm] = useState('');
+  const [setupError, setSetupError] = useState('');
+
+  useEffect(() => {
+    fetch('/api/admin/status')
+      .then(r => r.json())
+      .then(data => setIsConfigured(data.configured))
+      .catch(() => setStatusError(true));
+  }, []);
+
   const fetchData = useCallback(async () => {
     if (!token) return;
     setLoading(true);
@@ -83,6 +97,36 @@ export function Admin() {
     fetchData();
   }, [fetchData]);
 
+  const handleSetup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSetupError('');
+    if (setupPassword.length < 8) {
+      setSetupError('Password must be at least 8 characters.');
+      return;
+    }
+    if (setupPassword !== setupConfirm) {
+      setSetupError('Passwords do not match.');
+      return;
+    }
+    try {
+      const res = await fetch('/api/admin/setup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: setupPassword }),
+      });
+      if (res.ok) {
+        setIsConfigured(true);
+        setSetupPassword('');
+        setSetupConfirm('');
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setSetupError(data.message || 'Failed to create account. Please try again.');
+      }
+    } catch {
+      setSetupError('Connection error. Please try again.');
+    }
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError('');
@@ -97,12 +141,7 @@ export function Admin() {
         localStorage.setItem(ADMIN_TOKEN_KEY, data.token);
         setToken(data.token);
       } else {
-        const data = await res.json().catch(() => ({}));
-        if (data.error === 'admin_disabled') {
-          setLoginError('Admin portal is not configured. Please set the ADMIN_PASSWORD environment variable.');
-        } else {
-          setLoginError('Invalid password');
-        }
+        setLoginError('Invalid password');
       }
     } catch {
       setLoginError('Connection error. Please try again.');
@@ -161,6 +200,65 @@ export function Admin() {
       setActionError('Failed to delete photo. Please try again.');
     }
   };
+
+  // First-run setup screen
+  if (statusError) {
+    return (
+      <div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Admin Portal</h2>
+        <p className="text-red-600 text-center">Could not connect to server. Please refresh and try again.</p>
+      </div>
+    );
+  }
+
+  if (isConfigured === null) {
+    return (
+      <div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-6 text-center">Admin Portal</h2>
+        <p className="text-gray-500 text-center">Loading...</p>
+      </div>
+    );
+  }
+
+  // First-run setup screen
+  if (isConfigured === false) {
+    return (
+      <div>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2 text-center">Admin Portal</h2>
+        <p className="text-sm text-gray-500 text-center mb-6">Create your admin account to get started.</p>
+        <form onSubmit={handleSetup} className="space-y-4 max-w-sm mx-auto">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <input
+              type="password"
+              value={setupPassword}
+              onChange={(e) => setSetupPassword(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400"
+              placeholder="Choose a password (min. 8 characters)"
+              autoFocus
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+            <input
+              type="password"
+              value={setupConfirm}
+              onChange={(e) => setSetupConfirm(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-400"
+              placeholder="Confirm your password"
+            />
+          </div>
+          {setupError && <p className="text-red-600 text-sm">{setupError}</p>}
+          <button
+            type="submit"
+            className="w-full bg-orange-500 text-white py-2 px-4 rounded-lg hover:bg-orange-600 transition-colors font-medium"
+          >
+            Create Account
+          </button>
+        </form>
+      </div>
+    );
+  }
 
   if (!token) {
     return (

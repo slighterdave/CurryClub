@@ -161,10 +161,26 @@ const insertStmt = db.prepare(`
   VALUES (@restaurant, @food, @service, @choice, @value, @spiceLevel, @overall, @notes, @date_visited, @photo_path)
 `);
 
-// Admin authentication
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
-if (!ADMIN_PASSWORD) {
-  console.warn('⚠️  WARNING: ADMIN_PASSWORD environment variable is not set. Admin portal is disabled.');
+// Admin authentication — password stored as SHA-256 hex in admin_config table.
+// The ADMIN_PASSWORD env var takes priority when set.
+db.prepare(`
+  CREATE TABLE IF NOT EXISTS admin_config (
+    key TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  )
+`).run();
+
+function getAdminPasswordHash() {
+  if (process.env.ADMIN_PASSWORD) {
+    return createHash('sha256').update(process.env.ADMIN_PASSWORD).digest('hex');
+  }
+  const row = db.prepare("SELECT value FROM admin_config WHERE key = 'password_hash'").get();
+  return row ? row.value : null;
+}
+
+function isAdminConfigured() {
+  return !!(process.env.ADMIN_PASSWORD ||
+    db.prepare("SELECT value FROM admin_config WHERE key = 'password_hash'").get());
 }
 
 // In-memory session tokens (cleared on server restart)
@@ -407,15 +423,34 @@ app.get('/api/ratings/aggregate', noCacheMiddleware, (req, res) => {
 
 // --- Admin endpoints ---
 
-// POST /api/admin/login
-app.post('/api/admin/login', adminLoginRateLimit, (req, res) => {
-  if (!ADMIN_PASSWORD) {
-    return res.status(503).json({ error: 'admin_disabled', message: 'Admin portal is not configured.' });
+// GET /api/admin/status - returns whether an admin password has been configured
+app.get('/api/admin/status', (req, res) => {
+  res.json({ configured: isAdminConfigured() });
+});
+
+// POST /api/admin/setup - create admin password on first run (only when unconfigured)
+app.post('/api/admin/setup', adminLoginRateLimit, (req, res) => {
+  if (isAdminConfigured()) {
+    return res.status(409).json({ error: 'already_configured' });
   }
   const password = req.body && req.body.password ? String(req.body.password) : '';
-  const passwordHash = createHash('sha256').update(password).digest();
-  const adminHash = createHash('sha256').update(ADMIN_PASSWORD).digest();
-  if (timingSafeEqual(passwordHash, adminHash)) {
+  if (password.length < 8) {
+    return res.status(400).json({ error: 'password_too_short', message: 'Password must be at least 8 characters.' });
+  }
+  const hash = createHash('sha256').update(password).digest('hex');
+  db.prepare("INSERT OR REPLACE INTO admin_config (key, value) VALUES ('password_hash', ?)").run(hash);
+  res.json({ success: true });
+});
+
+// POST /api/admin/login
+app.post('/api/admin/login', adminLoginRateLimit, (req, res) => {
+  const storedHash = getAdminPasswordHash();
+  if (!storedHash) {
+    return res.status(503).json({ error: 'admin_not_configured' });
+  }
+  const password = req.body && req.body.password ? String(req.body.password) : '';
+  const passwordDigest = createHash('sha256').update(password).digest('hex');
+  if (timingSafeEqual(Buffer.from(passwordDigest, 'hex'), Buffer.from(storedHash, 'hex'))) {
     const token = randomBytes(32).toString('hex');
     adminSessions.add(token);
     res.json({ success: true, token });
