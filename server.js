@@ -162,9 +162,13 @@ const insertStmt = db.prepare(`
 `);
 
 // Admin authentication
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
+let ADMIN_PASSWORD = process.env.ADMIN_PASSWORD;
 if (!ADMIN_PASSWORD) {
-  console.warn('⚠️  WARNING: ADMIN_PASSWORD environment variable is not set. Admin portal is disabled.');
+  ADMIN_PASSWORD = randomBytes(16).toString('hex');
+  console.warn('⚠️  WARNING: ADMIN_PASSWORD environment variable is not set.');
+  console.warn(`   A temporary admin password has been generated for this session:`);
+  console.warn(`   ADMIN_PASSWORD=${ADMIN_PASSWORD}`);
+  console.warn('   To make this permanent, add it to your .env file.');
 }
 
 // In-memory session tokens (cleared on server restart)
@@ -409,9 +413,6 @@ app.get('/api/ratings/aggregate', noCacheMiddleware, (req, res) => {
 
 // POST /api/admin/login
 app.post('/api/admin/login', adminLoginRateLimit, (req, res) => {
-  if (!ADMIN_PASSWORD) {
-    return res.status(503).json({ error: 'admin_disabled', message: 'Admin portal is not configured.' });
-  }
   const password = req.body && req.body.password ? String(req.body.password) : '';
   const passwordHash = createHash('sha256').update(password).digest();
   const adminHash = createHash('sha256').update(ADMIN_PASSWORD).digest();
