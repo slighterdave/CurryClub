@@ -111,7 +111,7 @@ function AppContent() {
                 <StarIcon />
                 <span>Top Rated</span>
               </Link>
-            </li>
+                       </li>
             <li>
               <Link
                 to="/visits"
@@ -122,6 +122,7 @@ function AppContent() {
               >
                 <CalendarIcon />
                 <span>Visits</span>
+				</Link>
             </li>
             <li>
               <Link 
@@ -133,9 +134,7 @@ function AppContent() {
               >
                 <InfoIcon />
                 <span>About</span>
-              </Link>
-            
-              </Link>
+				</Link>
             </li>
           </ul>
         </nav>
