@@ -113,6 +113,17 @@ function AppContent() {
               </Link>
             </li>
             <li>
+              <Link
+                to="/visits"
+                onClick={() => setMenuOpen(false)}
+                className={`w-full text-left flex items-center gap-3 transition-colors py-2 ${
+                  location.pathname === '/visits' ? 'text-orange-600' : 'text-gray-700 hover:text-orange-600'
+                }`}
+              >
+                <CalendarIcon />
+                <span>Visits</span>
+            </li>
+            <li>
               <Link 
                 to="/about" 
                 onClick={() => setMenuOpen(false)}
@@ -123,17 +134,7 @@ function AppContent() {
                 <InfoIcon />
                 <span>About</span>
               </Link>
-            </li>
-            <li>
-              <Link
-                to="/visits"
-                onClick={() => setMenuOpen(false)}
-                className={`w-full text-left flex items-center gap-3 transition-colors py-2 ${
-                  location.pathname === '/visits' ? 'text-orange-600' : 'text-gray-700 hover:text-orange-600'
-                }`}
-              >
-                <CalendarIcon />
-                <span>Visits</span>
+            
               </Link>
             </li>
           </ul>
