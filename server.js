@@ -90,6 +90,18 @@ db.prepare(`
   )
 `).run();
 
+// Migrations: add address/location columns if they don't exist
+const restaurantColumns = db.prepare('PRAGMA table_info(restaurants)').all();
+if (!restaurantColumns.find(col => col.name === 'address')) {
+  db.prepare('ALTER TABLE restaurants ADD COLUMN address TEXT').run();
+}
+if (!restaurantColumns.find(col => col.name === 'latitude')) {
+  db.prepare('ALTER TABLE restaurants ADD COLUMN latitude REAL').run();
+}
+if (!restaurantColumns.find(col => col.name === 'longitude')) {
+  db.prepare('ALTER TABLE restaurants ADD COLUMN longitude REAL').run();
+}
+
 // Prepared statements for restaurants
 const insertRestaurantStmt = db.prepare(`
   INSERT INTO restaurants (name) VALUES (?)
@@ -198,6 +210,8 @@ function adminAuth(req, res, next) {
 // Rate limiters for admin endpoints
 const adminLoginRateLimit = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, standardHeaders: true, legacyHeaders: false });
 const adminActionRateLimit = rateLimit({ windowMs: 60 * 1000, max: 100, standardHeaders: true, legacyHeaders: false });
+// Rate limiter for public API endpoints
+const publicApiRateLimit = rateLimit({ windowMs: 60 * 1000, max: 60, standardHeaders: true, legacyHeaders: false });
 
 // Middleware to prevent caching of API responses
 function noCacheMiddleware(req, res, next) {
@@ -470,7 +484,7 @@ app.post('/api/admin/logout', adminAuth, (req, res) => {
 // GET /api/admin/restaurants
 app.get('/api/admin/restaurants', adminAuth, adminActionRateLimit, noCacheMiddleware, (req, res) => {
   const rows = db.prepare(`
-    SELECT r.id, r.name, r.created_at, COUNT(rt.id) as rating_count
+    SELECT r.id, r.name, r.address, r.latitude, r.longitude, r.created_at, COUNT(rt.id) as rating_count
     FROM restaurants r
     LEFT JOIN ratings rt ON LOWER(rt.restaurant) = LOWER(r.name)
     GROUP BY r.id
@@ -550,7 +564,67 @@ app.delete('/api/admin/restaurants/:id', adminAuth, adminActionRateLimit, (req, 
   res.json({ success: true });
 });
 
+// PUT /api/admin/restaurants/:id/address - Update address and geocode
+app.put('/api/admin/restaurants/:id/address', adminAuth, adminActionRateLimit, async (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) {
+    return res.status(400).json({ error: 'invalid_id' });
+  }
+  const restaurant = db.prepare('SELECT * FROM restaurants WHERE id = ?').get(id);
+  if (!restaurant) {
+    return res.status(404).json({ error: 'not_found' });
+  }
+
+  const rawAddress = req.body && req.body.address ? String(req.body.address) : '';
+  const address = sanitizeInput(rawAddress);
+
+  if (!address) {
+    // Clear address and coordinates
+    db.prepare('UPDATE restaurants SET address = NULL, latitude = NULL, longitude = NULL WHERE id = ?').run(id);
+    const updated = db.prepare('SELECT id, name, address, latitude, longitude FROM restaurants WHERE id = ?').get(id);
+    return res.json({ restaurant: updated });
+  }
+
+  // Geocode using Nominatim (OpenStreetMap)
+  let latitude = null;
+  let longitude = null;
+  try {
+    const query = encodeURIComponent(address);
+    const geocodeRes = await fetch(
+      `https://nominatim.openstreetmap.org/search?q=${query}&format=json&limit=1`,
+      { headers: { 'User-Agent': 'Curry Club/1.0 (curry club restaurant tracker)' } }
+    );
+    if (geocodeRes.ok) {
+      const geocodeData = await geocodeRes.json();
+      if (geocodeData.length > 0) {
+        latitude = parseFloat(geocodeData[0].lat);
+        longitude = parseFloat(geocodeData[0].lon);
+      }
+    }
+  } catch (err) {
+    console.error('Geocoding failed:', err);
+    // Save address without coordinates if geocoding fails
+  }
+
+  db.prepare('UPDATE restaurants SET address = ?, latitude = ?, longitude = ? WHERE id = ?').run(address, latitude, longitude, id);
+  const updated = db.prepare('SELECT id, name, address, latitude, longitude FROM restaurants WHERE id = ?').get(id);
+  res.json({ restaurant: updated });
+});
+
 // --- end Admin endpoints ---
+
+// GET /api/restaurants/locations - Public endpoint for map data
+app.get('/api/restaurants/locations', publicApiRateLimit, noCacheMiddleware, (req, res) => {
+  const rows = db.prepare(`
+    SELECT r.id, r.name, r.address, r.latitude, r.longitude, COUNT(rt.id) as review_count
+    FROM restaurants r
+    INNER JOIN ratings rt ON LOWER(rt.restaurant) = LOWER(r.name)
+    WHERE r.latitude IS NOT NULL AND r.longitude IS NOT NULL
+    GROUP BY r.id
+    ORDER BY r.name COLLATE NOCASE
+  `).all();
+  res.json({ locations: rows });
+});
 
 // Health check
 app.get('/_health', (req, res) => {

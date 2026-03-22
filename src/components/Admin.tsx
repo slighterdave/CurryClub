@@ -5,6 +5,9 @@ interface Restaurant {
   name: string;
   created_at: string;
   rating_count: number;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 interface Rating {
@@ -52,6 +55,8 @@ export function Admin() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [actionError, setActionError] = useState('');
+  const [editingAddressId, setEditingAddressId] = useState<number | null>(null);
+  const [addressInput, setAddressInput] = useState('');
 
   // Setup state
   const [isConfigured, setIsConfigured] = useState<boolean | null>(null);
@@ -201,6 +206,22 @@ export function Admin() {
     }
   };
 
+  const saveAddress = async (id: number) => {
+    setActionError('');
+    const res = await fetch(`/api/admin/restaurants/${id}/address`, {
+      method: 'PUT',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ address: addressInput }),
+    });
+    if (res.ok) {
+      setEditingAddressId(null);
+      setAddressInput('');
+      fetchData();
+    } else {
+      setActionError('Failed to save address. Please try again.');
+    }
+  };
+
   // First-run setup screen
   if (statusError) {
     return (
@@ -340,21 +361,77 @@ export function Admin() {
             restaurants.map((r) => (
               <div
                 key={r.id}
-                className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200"
+                className="p-3 bg-gray-50 rounded-lg border border-gray-200"
               >
-                <div>
-                  <p className="font-medium text-gray-800">{r.name}</p>
-                  <p className="text-sm text-gray-500">
-                    {r.rating_count} review{r.rating_count !== 1 ? 's' : ''}
-                  </p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-gray-800">{r.name}</p>
+                    <p className="text-sm text-gray-500">
+                      {r.rating_count} review{r.rating_count !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => deleteRestaurant(r.id, r.name)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors"
+                  >
+                    <TrashIcon />
+                    Delete
+                  </button>
                 </div>
-                <button
-                  onClick={() => deleteRestaurant(r.id, r.name)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors"
-                >
-                  <TrashIcon />
-                  Delete
-                </button>
+
+                {/* Address section */}
+                {editingAddressId === r.id ? (
+                  <div className="mt-2 flex gap-2">
+                    <input
+                      type="text"
+                      value={addressInput}
+                      onChange={(e) => setAddressInput(e.target.value)}
+                      placeholder="Enter full address (e.g. 1 High St, Bristol BS1 1AA)"
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') saveAddress(r.id);
+                        if (e.key === 'Escape') { setEditingAddressId(null); setAddressInput(''); }
+                      }}
+                      autoFocus
+                    />
+                    <button
+                      onClick={() => saveAddress(r.id)}
+                      className="px-3 py-1.5 bg-orange-500 text-white text-sm rounded-lg hover:bg-orange-600 transition-colors"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => { setEditingAddressId(null); setAddressInput(''); }}
+                      className="px-3 py-1.5 bg-gray-200 text-gray-700 text-sm rounded-lg hover:bg-gray-300 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <p className="text-xs text-gray-400 flex-1">
+                      {r.address ? (
+                        <>
+                          <span className="text-gray-600">{r.address}</span>
+                          {r.latitude && r.longitude && (
+                            <span className="ml-1 text-green-600">✓ mapped</span>
+                          )}
+                          {r.address && !r.latitude && (
+                            <span className="ml-1 text-amber-600">⚠ not geocoded</span>
+                          )}
+                        </>
+                      ) : (
+                        <span>No address set</span>
+                      )}
+                    </p>
+                    <button
+                      onClick={() => { setEditingAddressId(r.id); setAddressInput(r.address || ''); }}
+                      className="text-xs text-orange-500 hover:text-orange-700 underline shrink-0"
+                    >
+                      {r.address ? 'Edit address' : 'Add address'}
+                    </button>
+                  </div>
+                )}
               </div>
             ))
           )}
