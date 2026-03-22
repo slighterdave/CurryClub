@@ -242,7 +242,7 @@ export function Visits() {
                     {rating.notes && (
                       <div className="pt-3 border-t border-gray-200">
                         <div className="text-xs text-gray-600 mb-1 font-semibold">Notes</div>
-                        <div className="text-sm text-gray-700">{rating.notes}</div>
+                        <div className="text-sm text-gray-700 whitespace-pre-wrap">{rating.notes}</div>
                       </div>
                     )}
                   </div>

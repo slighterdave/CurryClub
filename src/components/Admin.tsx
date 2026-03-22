@@ -456,7 +456,7 @@ export function Admin() {
                       Food {r.food} · Service {r.service} · Choice {r.choice} · Value {r.value} · Spice {r.spiceLevel}
                     </p>
                     {r.notes && (
-                      <p className="text-sm text-gray-600 mt-1 break-words">{r.notes}</p>
+                      <p className="text-sm text-gray-600 mt-1 break-words whitespace-pre-wrap">{r.notes}</p>
                     )}
                   </div>
                   <button
