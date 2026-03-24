@@ -167,10 +167,15 @@ if (!ratingsColumns.find(col => col.name === 'photo_path')) {
   db.prepare('ALTER TABLE ratings ADD COLUMN photo_path TEXT').run();
 }
 
+// Migration: add ip_address column if it doesn't exist
+if (!ratingsColumns.find(col => col.name === 'ip_address')) {
+  db.prepare('ALTER TABLE ratings ADD COLUMN ip_address TEXT').run();
+}
+
 // Prepared statement for ratings
 const insertStmt = db.prepare(`
-  INSERT INTO ratings (restaurant, food, service, choice, value, spiceLevel, overall, notes, date_visited, photo_path)
-  VALUES (@restaurant, @food, @service, @choice, @value, @spiceLevel, @overall, @notes, @date_visited, @photo_path)
+  INSERT INTO ratings (restaurant, food, service, choice, value, spiceLevel, overall, notes, date_visited, photo_path, ip_address)
+  VALUES (@restaurant, @food, @service, @choice, @value, @spiceLevel, @overall, @notes, @date_visited, @photo_path, @ip_address)
 `);
 
 // Admin authentication — password stored as SHA-256 hex in admin_config table.
@@ -267,6 +272,9 @@ app.post('/api/restaurants', (req, res) => {
   }
 });
 
+// Columns returned by public rating endpoints (ip_address is intentionally excluded)
+const PUBLIC_RATING_COLUMNS = 'id, restaurant, food, service, choice, value, spiceLevel, overall, notes, date_visited, photo_path, created_at';
+
 // POST /api/ratings
 app.post('/api/ratings', upload.single('photo'), (req, res) => {
   const body = req.body;
@@ -340,6 +348,13 @@ app.post('/api/ratings', upload.single('photo'), (req, res) => {
   // Handle uploaded photo
   const photoPath = req.file ? `/uploads/${req.file.filename}` : null;
 
+  // Capture submitter IP address for admin purposes.
+  // x-forwarded-for is used when the app is behind a trusted reverse proxy (e.g. nginx).
+  // If deployed without a proxy, req.socket.remoteAddress is used as a reliable fallback.
+  const ipAddress = (req.headers['x-forwarded-for'] ? String(req.headers['x-forwarded-for']).split(',')[0].trim() : null)
+    || req.socket.remoteAddress
+    || null;
+
   // proceed to insert (use sanitized values)
   const info = insertStmt.run({
     restaurant: sanitizedRestaurant,
@@ -351,16 +366,17 @@ app.post('/api/ratings', upload.single('photo'), (req, res) => {
     overall: Number(overall.toFixed(2)),
     notes: sanitizedNotes,
     date_visited: dateVisited,
-    photo_path: photoPath
+    photo_path: photoPath,
+    ip_address: ipAddress
   });
 
-  const inserted = db.prepare('SELECT * FROM ratings WHERE id = ?').get(info.lastInsertRowid);
+  const inserted = db.prepare(`SELECT ${PUBLIC_RATING_COLUMNS} FROM ratings WHERE id = ?`).get(info.lastInsertRowid);
   res.status(201).json({ rating: inserted });
 });
 
 // GET /api/ratings
 app.get('/api/ratings', noCacheMiddleware, (req, res) => {
-  const rows = db.prepare('SELECT * FROM ratings ORDER BY created_at DESC').all();
+  const rows = db.prepare(`SELECT ${PUBLIC_RATING_COLUMNS} FROM ratings ORDER BY created_at DESC`).all();
   res.json({ ratings: rows });
 });
 
@@ -373,7 +389,7 @@ app.get('/api/ratings/restaurant/:name', noCacheMiddleware, (req, res) => {
   
   // Use case-insensitive matching to find all ratings for this restaurant
   const rows = db.prepare(`
-    SELECT * FROM ratings 
+    SELECT ${PUBLIC_RATING_COLUMNS} FROM ratings 
     WHERE LOWER(restaurant) = LOWER(?) 
     ORDER BY created_at DESC
   `).all(restaurantName);
@@ -388,7 +404,7 @@ app.get('/api/ratings/date/:date', noCacheMiddleware, (req, res) => {
     return res.status(400).json({ error: 'invalid_date', message: 'Date must be in YYYY-MM-DD format.' });
   }
   const rows = db.prepare(`
-    SELECT * FROM ratings WHERE date_visited = ? ORDER BY created_at DESC
+    SELECT ${PUBLIC_RATING_COLUMNS} FROM ratings WHERE date_visited = ? ORDER BY created_at DESC
   `).all(dateStr);
   res.json({ ratings: rows });
 });
