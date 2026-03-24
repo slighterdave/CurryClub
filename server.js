@@ -117,12 +117,17 @@ const findRestaurantByNameCaseInsensitiveStmt = db.prepare(`
 `);
 
 // Helper function to sanitize input - prevent injection attacks
-function sanitizeInput(input) {
+// Pass allowNewlines=true to preserve \n and \r (e.g. for multi-line notes)
+function sanitizeInput(input, allowNewlines = false) {
   if (!input || typeof input !== 'string') return '';
-  // Remove any null bytes, control characters, and trim
+  // Remove any null bytes and control characters, then trim
+  // When allowNewlines is true, preserve \n (0x0A) and \r (0x0D)
+  const controlCharRegex = allowNewlines
+    ? /[\x00-\x09\x0B\x0C\x0E-\x1F\x7F]/g  // exclude \n (0x0A) and \r (0x0D)
+    : /[\x00-\x1F\x7F]/g;                    // remove all control characters
   return input
     .replace(/\0/g, '') // Remove null bytes
-    .replace(/[\x00-\x1F\x7F]/g, '') // Remove control characters
+    .replace(controlCharRegex, '')
     .trim();
 }
 
@@ -315,8 +320,8 @@ app.post('/api/ratings', upload.single('photo'), (req, res) => {
     return res.status(400).json({ error: 'restaurant_not_found', message: 'Restaurant must be added to list before rating.' });
   }
 
-  // Sanitize notes as well
-  const sanitizedNotes = body.notes ? sanitizeInput(body.notes) : null;
+  // Sanitize notes as well, preserving newlines for multi-line display
+  const sanitizedNotes = body.notes ? sanitizeInput(body.notes, true) : null;
   
   // Validate notes length (cap at 255 characters)
   if (sanitizedNotes && sanitizedNotes.length > 255) {
