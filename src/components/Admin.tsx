@@ -23,6 +23,7 @@ interface Rating {
   date_visited: string | null;
   photo_path: string | null;
   created_at: string;
+  ip_address: string | null;
 }
 
 const ADMIN_TOKEN_KEY = 'admin_session_token';
@@ -457,6 +458,9 @@ export function Admin() {
                     </p>
                     {r.notes && (
                       <p className="text-sm text-gray-600 mt-1 break-words whitespace-pre-wrap">{r.notes}</p>
+                    )}
+                    {r.ip_address && (
+                      <p className="text-xs text-gray-400 mt-1">IP: {r.ip_address}</p>
                     )}
                   </div>
                   <button
