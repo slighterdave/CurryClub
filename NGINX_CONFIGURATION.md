@@ -53,82 +53,55 @@ This removes the default "Welcome to nginx" page.
 
 ## Step 3: Create Nginx Configuration for CurryClub
 
-Create a new configuration file:
+The repository includes a ready-to-use Nginx configuration file at `nginx/curryclub.conf`. Copy it to the Nginx sites directory:
 
 ```bash
-sudo nano /etc/nginx/sites-available/curryclub
+sudo cp /home/ubuntu/CurryClub/nginx/curryclub.conf /etc/nginx/sites-available/curryclub
 ```
 
-Paste the following configuration:
+The configuration already has `server_name curryclub.lol www.curryclub.lol;` set correctly, which is required for certbot to automatically install SSL certificates.
+
+The configuration serves the built frontend files directly from the `dist/` folder and proxies API requests to the Node.js backend:
 
 ```nginx
 server {
-    listen 80;
-    server_name your-domain.com;  # Replace with your domain or EC2 IP address
-    
-    # Increase client max body size for file uploads (if needed)
-    client_max_body_size 10M;
-    
-    # Root location - proxy to Node.js server
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    root /home/ubuntu/CurryClub/dist;
+
+    # Serve index.html as the default file
+    index index.html;
+
+    server_name curryclub.lol www.curryclub.lol;
+
     location / {
-        proxy_pass http://localhost:3001;
-        proxy_http_version 1.1;
-        
-        # WebSocket support (if needed in future)
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        
-        # Important headers for proper proxying
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        
-        # CRITICAL: Disable caching for HTML to ensure updates are visible
-        proxy_cache_bypass $http_upgrade;
-        proxy_no_cache 1;
-        add_header Cache-Control "no-cache, no-store, must-revalidate, private";
+        # Serve files or fallback to index.html
+        try_files $uri /index.html;
+
+        # Add cache control headers
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
         add_header Pragma "no-cache";
-        add_header Expires "0";
+        add_header Expires 0;
     }
-    
-    # API routes - proxy with no caching
+
+    # Proxy API requests to Node.js backend
     location /api/ {
         proxy_pass http://localhost:3001;
         proxy_http_version 1.1;
-        
+
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
-        
+
         # Never cache API responses
         proxy_no_cache 1;
         proxy_cache_bypass 1;
         add_header Cache-Control "no-cache, no-store, must-revalidate";
     }
-    
-    # Health check endpoint
-    location /_health {
-        proxy_pass http://localhost:3001;
-        access_log off;
-    }
-    
-    # Logging
-    access_log /var/log/nginx/curryclub_access.log;
-    error_log /var/log/nginx/curryclub_error.log;
 }
 ```
-
-**Important:** Replace `your-domain.com` with:
-- Your domain name (e.g., `curryclub.example.com`) if you have one
-- Your EC2 public IP address (e.g., `13.49.111.162`) if you don't have a domain
-- Or just use `_` as a catch-all (works for any domain/IP)
-
-Save and exit:
-- Press `Ctrl+X`
-- Press `Y` to confirm
-- Press `Enter` to save
 
 ## Step 4: Enable the Site
 
@@ -364,13 +337,15 @@ sudo apt install -y certbot python3-certbot-nginx
 **Important:** You need a domain name for this. It won't work with just an IP address.
 
 ```bash
-sudo certbot --nginx -d your-domain.com
+sudo certbot --nginx -d curryclub.lol -d www.curryclub.lol
 ```
 
 Follow the prompts:
 - Enter your email
 - Agree to terms of service
 - Choose whether to redirect HTTP to HTTPS (recommended: Yes)
+
+**Note:** Certbot requires the `server_name` in the Nginx config to match the domains you request. The `nginx/curryclub.conf` file in this repository already has `server_name curryclub.lol www.curryclub.lol;` set correctly. If certbot reports "Could not automatically find a matching server block", it means the Nginx config still has a placeholder like `your-domain.com` — update it to `curryclub.lol www.curryclub.lol` and restart Nginx before running certbot again.
 
 ### 3. Test Auto-Renewal
 
@@ -396,7 +371,7 @@ limit_req_zone $binary_remote_addr zone=api_limit:10m rate=10r/s;
 
 server {
     listen 80;
-    server_name your-domain.com;
+    server_name curryclub.lol www.curryclub.lol;
     
     client_max_body_size 10M;
     

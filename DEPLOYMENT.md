@@ -254,28 +254,40 @@ sudo apt install -y nginx
 sudo nano /etc/nginx/sites-available/curryclub
 ```
 
-Add this basic configuration (see [NGINX_CONFIGURATION.md](NGINX_CONFIGURATION.md) for full version with no-cache headers):
+Add this basic configuration (see [NGINX_CONFIGURATION.md](NGINX_CONFIGURATION.md) for full details):
 
 ```nginx
 server {
-    listen 80;
-    server_name your-domain.com;  # Or your EC2 public IP or just use _
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    root /home/ubuntu/CurryClub/dist;
+    index index.html;
+    server_name curryclub.lol www.curryclub.lol;
 
     location / {
+        try_files $uri /index.html;
+        add_header Cache-Control "no-cache, no-store, must-revalidate";
+        add_header Pragma "no-cache";
+        add_header Expires 0;
+    }
+
+    location /api/ {
         proxy_pass http://localhost:3001;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        
-        # Important: Disable caching to see updates immediately
         proxy_no_cache 1;
         add_header Cache-Control "no-cache, no-store, must-revalidate";
     }
 }
+```
+
+Or simply copy the ready-to-use config from the repository:
+
+```bash
+sudo cp /home/ubuntu/CurryClub/nginx/curryclub.conf /etc/nginx/sites-available/curryclub
 ```
 
 Enable the site:
@@ -304,7 +316,7 @@ If you have a domain name:
 sudo apt install -y certbot python3-certbot-nginx
 
 # Obtain certificate
-sudo certbot --nginx -d your-domain.com
+sudo certbot --nginx -d curryclub.lol -d www.curryclub.lol
 ```
 
 ### 3. Configure Firewall
