@@ -104,9 +104,14 @@ NEEDS_RENEWAL=false
 
 if command -v certbot &> /dev/null && [ -f "$CERT_PATH" ]; then
     EXPIRY=$(openssl x509 -enddate -noout -in "$CERT_PATH" 2>/dev/null | cut -d= -f2)
-    EXPIRY_EPOCH=$(date -d "$EXPIRY" +%s 2>/dev/null)
+    EXPIRY_EPOCH=$(date -d "$EXPIRY" +%s 2>/dev/null || date -j -f "%b %d %T %Y %Z" "$EXPIRY" +%s 2>/dev/null)
     NOW_EPOCH=$(date +%s)
-    DAYS_LEFT=$(( (EXPIRY_EPOCH - NOW_EPOCH) / 86400 ))
+    if [ -z "$EXPIRY_EPOCH" ] || ! [[ "$EXPIRY_EPOCH" =~ ^[0-9]+$ ]]; then
+        echo "⚠️  Could not parse certificate expiry date — skipping expiry check."
+        DAYS_LEFT=999
+    else
+        DAYS_LEFT=$(( (EXPIRY_EPOCH - NOW_EPOCH) / 86400 ))
+    fi
 
     if [ "$DAYS_LEFT" -lt 0 ]; then
         echo "❌ Certificate EXPIRED ${DAYS_LEFT#-} days ago — renewal required!"
@@ -126,7 +131,6 @@ fi
 if $NEEDS_RENEWAL; then
     read -p "   Renew certificate now? (Y/n): " DO_RENEW
     if [[ ! "$DO_RENEW" =~ ^[Nn]$ ]]; then
-        chmod +x /home/ubuntu/CurryClub/renew-cert.sh 2>/dev/null || true
         ./renew-cert.sh
     else
         echo "   Skipped. Run ./renew-cert.sh when ready."

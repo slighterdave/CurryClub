@@ -6,6 +6,7 @@
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOMAIN="curryclub.lol"
 DOMAINS="-d curryclub.lol -d www.curryclub.lol"
 
@@ -33,7 +34,12 @@ if [ -f "$CERT_PATH" ]; then
     EXPIRY=$(openssl x509 -enddate -noout -in "$CERT_PATH" 2>/dev/null | cut -d= -f2)
     EXPIRY_EPOCH=$(date -d "$EXPIRY" +%s 2>/dev/null || date -j -f "%b %d %T %Y %Z" "$EXPIRY" +%s 2>/dev/null)
     NOW_EPOCH=$(date +%s)
-    DAYS_LEFT=$(( (EXPIRY_EPOCH - NOW_EPOCH) / 86400 ))
+    if [ -z "$EXPIRY_EPOCH" ] || ! [[ "$EXPIRY_EPOCH" =~ ^[0-9]+$ ]]; then
+        echo "⚠️  Could not parse certificate expiry date. Skipping expiry check."
+        DAYS_LEFT=999
+    else
+        DAYS_LEFT=$(( (EXPIRY_EPOCH - NOW_EPOCH) / 86400 ))
+    fi
 
     if [ "$DAYS_LEFT" -lt 0 ]; then
         echo "❌ Certificate EXPIRED ${DAYS_LEFT#-} days ago (expired: $EXPIRY)"
@@ -47,7 +53,7 @@ fi
 
 # Ensure nginx has the ACME challenge location (copy updated conf if needed)
 echo "🔧 Applying latest Nginx config..."
-sudo cp /home/ubuntu/CurryClub/nginx/curryclub.conf /etc/nginx/sites-available/curryclub
+sudo cp "$SCRIPT_DIR/nginx/curryclub.conf" /etc/nginx/sites-available/curryclub
 sudo nginx -t
 sudo systemctl reload nginx
 echo "✅ Nginx config updated and reloaded."
@@ -103,7 +109,7 @@ else
         echo "$CRON_JOB" | sudo tee -a /etc/crontab > /dev/null
         echo "✅ Cron job added to /etc/crontab for automatic renewal."
     else
-        echo "✅ Cron job already exists."
+        echo "✅ Cron job already exists in /etc/crontab."
     fi
 fi
 
