@@ -92,19 +92,50 @@ echo "⚠️  IMPORTANT: Clear your browser cache!"
 echo "   Press Ctrl+Shift+Delete (or Cmd+Shift+Delete on Mac)"
 echo "   Or do a hard refresh: Ctrl+Shift+R (or Cmd+Shift+R on Mac)"
 
-# HTTPS registration with Let's Encrypt / Certbot
+# HTTPS certificate check and renewal
 echo ""
-echo "🔒 HTTPS Setup (Let's Encrypt)"
+echo "🔒 HTTPS Certificate Check"
 echo "================================"
-read -p "Would you like to register/renew an HTTPS certificate? (y/N): " SETUP_HTTPS
 
-if [[ "$SETUP_HTTPS" =~ ^[Yy]$ ]]; then
-    read -p "Enter your domain name (e.g. curryclub.example.com): " DOMAIN_NAME
+DOMAIN="curryclub.lol"
+CERT_PATH="/etc/letsencrypt/live/$DOMAIN/fullchain.pem"
+NEEDS_SETUP=false
+NEEDS_RENEWAL=false
 
-    if [ -z "$DOMAIN_NAME" ]; then
-        echo "❌ No domain name provided. Skipping HTTPS setup."
-        echo "   Re-run deploy.sh and enter a domain name to set up HTTPS."
+if command -v certbot &> /dev/null && [ -f "$CERT_PATH" ]; then
+    EXPIRY=$(openssl x509 -enddate -noout -in "$CERT_PATH" 2>/dev/null | cut -d= -f2)
+    EXPIRY_EPOCH=$(date -d "$EXPIRY" +%s 2>/dev/null)
+    NOW_EPOCH=$(date +%s)
+    DAYS_LEFT=$(( (EXPIRY_EPOCH - NOW_EPOCH) / 86400 ))
+
+    if [ "$DAYS_LEFT" -lt 0 ]; then
+        echo "❌ Certificate EXPIRED ${DAYS_LEFT#-} days ago — renewal required!"
+        NEEDS_RENEWAL=true
+    elif [ "$DAYS_LEFT" -lt 30 ]; then
+        echo "⚠️  Certificate expires in $DAYS_LEFT days — renewal recommended."
+        NEEDS_RENEWAL=true
     else
+        echo "✅ Certificate is valid for $DAYS_LEFT more days (expires: $EXPIRY)."
+        echo "   To force a renewal, run: ./renew-cert.sh"
+    fi
+else
+    echo "ℹ️  No certificate found for $DOMAIN."
+    NEEDS_SETUP=true
+fi
+
+if $NEEDS_RENEWAL; then
+    read -p "   Renew certificate now? (Y/n): " DO_RENEW
+    if [[ ! "$DO_RENEW" =~ ^[Nn]$ ]]; then
+        chmod +x /home/ubuntu/CurryClub/renew-cert.sh 2>/dev/null || true
+        ./renew-cert.sh
+    else
+        echo "   Skipped. Run ./renew-cert.sh when ready."
+    fi
+fi
+
+if $NEEDS_SETUP; then
+    read -p "   Set up HTTPS certificate now? (y/N): " SETUP_HTTPS
+    if [[ "$SETUP_HTTPS" =~ ^[Yy]$ ]]; then
         # Install certbot if not already present
         if ! command -v certbot &> /dev/null; then
             echo "📦 Installing Certbot..."
@@ -113,32 +144,18 @@ if [[ "$SETUP_HTTPS" =~ ^[Yy]$ ]]; then
         fi
 
         echo ""
-        echo "🔐 Registering HTTPS certificate for $DOMAIN_NAME..."
-        if ! sudo certbot --nginx -d "$DOMAIN_NAME"; then
+        echo "🔐 Registering HTTPS certificate for $DOMAIN and www.$DOMAIN..."
+        if ! sudo certbot --nginx -d "$DOMAIN" -d "www.$DOMAIN"; then
             echo ""
-            echo "❌ Certbot failed to register a certificate for $DOMAIN_NAME."
-            echo "   Common causes:"
-            echo "   - DNS for $DOMAIN_NAME is not pointing to this server"
+            echo "❌ Certbot failed. Common causes:"
+            echo "   - DNS for $DOMAIN is not pointing to this server"
             echo "   - Port 80 or 443 is blocked by your firewall or security group"
-            echo "   - The domain name is invalid or unreachable"
-            echo "   Fix the issue above and re-run: sudo certbot --nginx -d $DOMAIN_NAME"
+            echo "   Fix the issue and re-run: ./renew-cert.sh"
         else
             echo ""
-            echo "🔄 Testing certificate auto-renewal..."
-            if ! sudo certbot renew --dry-run; then
-                echo ""
-                echo "⚠️  Auto-renewal test failed. Your certificate is still valid."
-                echo "   This is only a test; your live certificate was not affected."
-                echo "   Check certbot logs for details: sudo journalctl -u certbot"
-            fi
-
-            echo ""
-            echo "✅ HTTPS certificate registered for $DOMAIN_NAME!"
-            echo "   Your site is now available at https://$DOMAIN_NAME"
-            echo "   Certbot will automatically renew the certificate before it expires."
+            echo "✅ HTTPS certificate registered! Site available at https://$DOMAIN"
         fi
+    else
+        echo "   Skipping HTTPS setup. Run ./renew-cert.sh to set it up later."
     fi
-else
-    echo "ℹ️  Skipping HTTPS setup."
-    echo "   To set up HTTPS later, run: sudo certbot --nginx -d your-domain.com"
 fi
