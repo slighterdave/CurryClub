@@ -359,6 +359,66 @@ Certbot will automatically renew your certificate before it expires.
 
 Make sure port 443 is open in your EC2 Security Group.
 
+## Fixing an Expired or Broken HTTPS Certificate
+
+If the site shows a certificate error or the cert has expired, use the included renewal script:
+
+```bash
+cd /home/ubuntu/CurryClub
+chmod +x renew-cert.sh
+./renew-cert.sh
+```
+
+The script will:
+- Show the current certificate status and expiry date
+- Apply the latest Nginx config (which includes the ACME challenge location)
+- Attempt a standard `certbot renew`
+- Fall back to a forced re-issuance if renewal fails
+- Verify (and set up if missing) the auto-renewal cron job
+
+### Manual renewal commands
+
+```bash
+# Check cert status
+sudo certbot certificates
+
+# Renew all certs due for renewal
+sudo certbot renew --nginx
+
+# Force renew even if not yet due (useful if cert is broken/revoked)
+sudo certbot --nginx -d curryclub.lol -d www.curryclub.lol --force-renewal
+
+# Reload Nginx after renewal
+sudo systemctl reload nginx
+```
+
+### Common renewal failure causes
+
+| Symptom | Fix |
+|---------|-----|
+| `DNS problem: NXDOMAIN` | Domain DNS not pointing to this server |
+| `Connection refused` on port 80 | EC2 Security Group missing port 80 inbound rule |
+| `Connection refused` on port 443 | EC2 Security Group missing port 443 inbound rule |
+| `Could not automatically find a matching server block` | Nginx `server_name` doesn't match the cert domains — copy the latest conf and reload Nginx |
+| Auto-renewal not working | Check timer: `systemctl status certbot.timer` or look in `/etc/crontab` |
+
+### Check auto-renewal timer
+
+```bash
+# Systemd-managed (most Ubuntu installations)
+systemctl status certbot.timer
+
+# Or check crontab
+sudo crontab -l | grep certbot
+cat /etc/crontab | grep certbot
+```
+
+If no timer or cron job exists, add one:
+
+```bash
+echo "0 */12 * * * root certbot renew --quiet --nginx && systemctl reload nginx" | sudo tee -a /etc/crontab
+```
+
 ## Configuration for Production
 
 For a production environment, consider this enhanced configuration:
