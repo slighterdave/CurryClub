@@ -37,10 +37,11 @@ echo ""
 echo "🔨 Building application..."
 npm run build
 
-# Verify dist directory was created
-if [ ! -d "dist" ]; then
+# Verify the build produced a valid index.html (not just an empty dist/ directory,
+# which vite creates before building and would leave behind on a failed build)
+if [ ! -f "dist/index.html" ]; then
     echo ""
-    echo "❌ ERROR: Build failed - dist directory not created!"
+    echo "❌ ERROR: Build failed - dist/index.html not found!"
     echo "   Please check the build output above for errors."
     exit 1
 fi
@@ -83,6 +84,31 @@ else
     echo "   sudo npm install -g pm2"
     echo "   pm2 start server.js --name curryclub"
     echo "   pm2 save"
+fi
+
+# Update nginx config if nginx is installed and the sites-available config exists
+if command -v nginx &>/dev/null && [ -f /etc/nginx/sites-available/curryclub ]; then
+    echo ""
+    echo "🔧 Updating Nginx configuration..."
+    # Back up the live config before overwriting (preserves any certbot HTTPS additions)
+    sudo cp /etc/nginx/sites-available/curryclub /etc/nginx/sites-available/curryclub.bak 2>/dev/null || true
+    sudo cp nginx/curryclub.conf /etc/nginx/sites-available/curryclub
+    if sudo nginx -t 2>/dev/null; then
+        sudo systemctl reload nginx
+        echo "✅ Nginx configuration updated and reloaded."
+        # Warn if the previous config had SSL so the user knows to re-run certbot
+        if grep -q "ssl_certificate" /etc/nginx/sites-available/curryclub.bak 2>/dev/null; then
+            echo ""
+            echo "⚠️  The previous Nginx config had SSL/HTTPS configured by certbot."
+            echo "   Re-run certbot to restore HTTPS:"
+            echo "   sudo certbot --nginx -d curryclub.lol -d www.curryclub.lol"
+        fi
+    else
+        # Restore the backed-up config if the new one fails validation
+        sudo cp /etc/nginx/sites-available/curryclub.bak /etc/nginx/sites-available/curryclub 2>/dev/null || true
+        echo "❌ Nginx config test failed — reverted to previous config."
+        echo "   Check nginx/curryclub.conf for errors."
+    fi
 fi
 
 echo ""
